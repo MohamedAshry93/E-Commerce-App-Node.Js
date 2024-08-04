@@ -3,9 +3,18 @@ import { nanoid } from "nanoid";
 
 //# utils
 import { ErrorHandlerClass } from "../../Utils/error-class.utils.js";
-import { cloudinaryConfig } from "../../Utils/index.js";
+import {
+    cloudinaryConfig,
+    uploadNewFile,
+    uploadUpdatedFile,
+} from "../../Utils/index.js";
+
 //# models
-import { Category } from "./../../../database/Models/index.js";
+import {
+    Brand,
+    Category,
+    SubCategory,
+} from "./../../../database/Models/index.js";
 
 //# APIS
 /*
@@ -15,6 +24,7 @@ import { Category } from "./../../../database/Models/index.js";
 const createCategory = async (req, res, next) => {
     //? destruct data from req.body
     const { name } = req.body;
+    //? generate category slug
     const slug = slugify(name, {
         trim: true,
         lower: true,
@@ -31,15 +41,13 @@ const createCategory = async (req, res, next) => {
     }
     //? upload image to cloudinary
     const customId = nanoid(4);
-    const { secure_url, public_id } = await cloudinaryConfig().uploader.upload(
-        req.file.path,
-        {
-            folder: `${process.env.UPLOADS_FOLDER}/Categories/${customId}`,
-            resource_type: "image",
-            use_filename: true,
-            tags: ["categoryImage"],
-        }
-    );
+    const { secure_url, public_id } = await uploadNewFile({
+        file: req.file.path,
+        folder: `${process.env.UPLOADS_FOLDER}/Categories/${customId}`,
+        resource_type: "image",
+        use_filename: true,
+        tags: ["categoryImage"],
+    });
     //? create category object
     const category = {
         name,
@@ -65,6 +73,7 @@ const createCategory = async (req, res, next) => {
 */
 //! ========================================== Get Category ========================================== //
 const getCategory = async (req, res, next) => {
+    //? destruct data from req.query
     const { name, id, slug } = req.query;
     const queryFilter = {};
     //? check if query exists
@@ -111,28 +120,29 @@ const updateCategory = async (req, res, next) => {
             )
         );
     }
-    //? check category by name
+    //? destruct data from req.body
     const { name, old_public_id } = req.body;
+    //? change name
     if (name) {
+        //? generate category slug
         const slug = slugify(name, {
             trim: true,
             lower: true,
         });
+        //? change name and slug
         category.name = name;
         category.slug = slug;
     }
     //? change image
     if (req.file) {
-        await cloudinaryConfig().uploader.destroy(old_public_id);
-        const { secure_url, public_id } = await cloudinaryConfig().uploader.upload(
-            req.file.path,
-            {
-                folder: `${process.env.UPLOADS_FOLDER}/Categories/${category.customId}`,
-                use_filename: true,
-                resource_type: "image",
-                tags: ["categoryImage"],
-            }
-        );
+        const { secure_url, public_id } = await uploadUpdatedFile({
+            old_public_id,
+            file: req.file.path,
+            folder: `${process.env.UPLOADS_FOLDER}/Categories/${category.customId}`,
+            use_filename: true,
+            resource_type: "image",
+            tags: ["categoryImage"],
+        });
         category.images.secure_url = secure_url;
         category.images.public_id = public_id;
     }
@@ -165,14 +175,19 @@ const deleteCategory = async (req, res, next) => {
             )
         );
     }
-    const categoryPath=`${process.env.UPLOADS_FOLDER}/Categories/${deletedCategory?.customId}`;
+    const categoryPath = `${process.env.UPLOADS_FOLDER}/Categories/${deletedCategory?.customId}`;
     //? delete image from cloudinary
     await cloudinaryConfig().api.delete_resources_by_prefix(categoryPath);
     //? delete folder from cloudinary
     await cloudinaryConfig().api.delete_folder(categoryPath);
-
-    // TODO: delete relevant sub-category from database
-    // TODO: delete relevant brands from database
+    //? delete relevant sub-category from database
+    const deletedSubCategory = await SubCategory.deleteMany({
+        categoryId: _id,
+    });
+    //? delete relevant brands from database
+    if (deletedSubCategory.deletedCount) {
+        await Brand.deleteMany({ categoryId: _id });
+    }
     // TODO: delete relevant products from database
 
     //? return response

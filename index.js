@@ -22,7 +22,7 @@ app.use(express.json());
 app.use("/users", routers.userRouter);
 app.use("/products", routers.productRouter);
 app.use("/categories", routers.categoryRouter);
-app.use("/sub-category", routers.subCategoryRouter);
+app.use("/sub-categories", routers.subCategoryRouter);
 app.use("/brands", routers.brandRouter);
 app.use("/reviews", routers.reviewRouter);
 app.use("/coupons", routers.couponRouter);
