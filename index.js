@@ -4,7 +4,7 @@ import path from "path";
 
 import connectionDB from "./database/connection.js";
 import * as routers from "./src/Modules/index.js";
-import { ErrorHandlerClass } from "./src/Utils/error-class.utils.js";
+import { ErrorHandlerClass } from "./src/Utils/index.js";
 import { globalResponse } from "./src/Middlewares/index.js";
 
 if (process.env.NODE_ENV == "prod") {

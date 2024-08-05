@@ -212,6 +212,12 @@ const deleteSubCategory = async (req, res, next) => {
     });
 };
 
+/*
+@api {GET} /sub-categories/all (get all sub-category with paginated)
+*/
+//! =========================== Get all subCategories paginated with it’s brands =========================== //
+
+
 export {
     createSubCategory,
     getSubCategory,

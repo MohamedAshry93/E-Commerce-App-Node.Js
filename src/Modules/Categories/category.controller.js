@@ -47,6 +47,7 @@ const createCategory = async (req, res, next) => {
         resource_type: "image",
         use_filename: true,
         tags: ["categoryImage"],
+        next,
     });
     //? create category object
     const category = {
@@ -142,6 +143,7 @@ const updateCategory = async (req, res, next) => {
             use_filename: true,
             resource_type: "image",
             tags: ["categoryImage"],
+            next
         });
         category.images.secure_url = secure_url;
         category.images.public_id = public_id;
@@ -188,6 +190,7 @@ const deleteCategory = async (req, res, next) => {
     if (deletedSubCategory.deletedCount) {
         await Brand.deleteMany({ categoryId: _id });
     }
+
     // TODO: delete relevant products from database
 
     //? return response
@@ -197,5 +200,11 @@ const deleteCategory = async (req, res, next) => {
         data: deletedCategory,
     });
 };
+
+/*
+@api {GET} /categories/all (get all category with paginated)
+*/
+//! ========================= Get all categories paginated with its sub-categories ========================= //
+
 
 export { createCategory, getCategory, updateCategory, deleteCategory };

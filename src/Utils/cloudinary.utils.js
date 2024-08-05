@@ -1,7 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
 
 //# utils
-import { ErrorHandlerClass } from "./error-class.utils.js";
+import { ErrorHandlerClass } from "./index.js";
 
 //! ================================ Cloudinary Config ================================ //
 const cloudinaryConfig = () => {
@@ -26,6 +26,7 @@ const uploadNewFile = async ({
     use_filename,
     resource_type,
     tags,
+    next,
 }) => {
     if (!file) {
         return next(
@@ -64,6 +65,7 @@ const uploadUpdatedFile = async ({
     use_filename,
     resource_type,
     tags,
+    next,
 }) => {
     if (!file) {
         return next(
@@ -88,7 +90,18 @@ const uploadUpdatedFile = async ({
         );
     }
     //? delete old image on cloudinary
-    await cloudinaryConfig().uploader.destroy(old_public_id);
+    const deletedImage = await cloudinaryConfig().uploader.destroy(old_public_id);
+    if (deletedImage.result == "not found") {
+        return next(
+            new ErrorHandlerClass(
+                "Old image not found",
+                400,
+                "Error in uploadUpdatedFile API",
+                "at uploadUpdatedFile utils",
+                { old_public_id }
+            )
+        );
+    }
     //? upload new image on cloudinary
     const { secure_url, public_id } = await cloudinaryConfig().uploader.upload(
         file,

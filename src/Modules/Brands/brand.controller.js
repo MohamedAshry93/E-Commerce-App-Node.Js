@@ -210,4 +210,17 @@ const deleteBrand = async (req, res, next) => {
 
 };
 
+/*
+@api {GET} /brands/ (get brands for specific subCategory or category or name)
+*/
+//! ====================== Get brands for specific subCategory or category or name ====================== //
+
+
+/*
+@api {GET} /brands/all (get all brands with its products)
+*/
+//! ========================================== Get all brands with its products ========================================== //
+
+
+
 export { createBrand, getBrand, updateBrand, deleteBrand };
