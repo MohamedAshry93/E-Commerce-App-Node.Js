@@ -26,6 +26,12 @@ categoryRouter.post(
     middleware.errorHandling(categoryController.createCategory)
 );
 
+//# get all categories API router
+categoryRouter.get(
+    "/all",
+    middleware.errorHandling(categoryController.getAllCategories)
+);
+
 //# get category API router
 categoryRouter.get(
     "/",

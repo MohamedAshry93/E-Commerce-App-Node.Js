@@ -2,17 +2,19 @@ import slugify from "slugify";
 import { nanoid } from "nanoid";
 
 //# utils
-import { ErrorHandlerClass } from "../../Utils/error-class.utils.js";
 import {
     cloudinaryConfig,
     uploadNewFile,
     uploadUpdatedFile,
+    ErrorHandlerClass,
+    ApiFeatures,
 } from "../../Utils/index.js";
 
 //# models
 import {
     Brand,
     Category,
+    Product,
     SubCategory,
 } from "./../../../database/Models/index.js";
 
@@ -76,13 +78,13 @@ const createCategory = async (req, res, next) => {
 const getCategory = async (req, res, next) => {
     //? destruct data from req.query
     const { name, id, slug } = req.query;
-    const queryFilter = {};
+    const queryFilters = {};
     //? check if query exists
-    if (name) queryFilter.name = name;
-    if (id) queryFilter._id = id;
-    if (slug) queryFilter.slug = slug;
+    if (name) queryFilters.name = name;
+    if (id) queryFilters._id = id;
+    if (slug) queryFilters.slug = slug;
     //? find the category
-    const category = await Category.findOne(queryFilter);
+    const category = await Category.findOne(queryFilters);
     //? check if category exists
     if (!category) {
         return next(
@@ -90,7 +92,7 @@ const getCategory = async (req, res, next) => {
                 "Category not found",
                 404,
                 "Error in getCategory API",
-                "at getCategory middleware"
+                "at Category controller"
             )
         );
     }
@@ -109,15 +111,15 @@ const getCategory = async (req, res, next) => {
 const updateCategory = async (req, res, next) => {
     //? destruct id from req.params
     const { _id } = req.params;
-    //? check if category exists
+    //? check if category exists in DB
     const category = await Category.findById(_id);
     if (!category) {
         return next(
             new ErrorHandlerClass(
                 "Category not found",
                 404,
-                "Error in updatedCategory API",
-                "at updatedCategory controller"
+                "Error in updateCategory API",
+                "at Category controller"
             )
         );
     }
@@ -143,7 +145,7 @@ const updateCategory = async (req, res, next) => {
             use_filename: true,
             resource_type: "image",
             tags: ["categoryImage"],
-            next
+            next,
         });
         category.images.secure_url = secure_url;
         category.images.public_id = public_id;
@@ -165,7 +167,8 @@ const updateCategory = async (req, res, next) => {
 const deleteCategory = async (req, res, next) => {
     //? destruct id from req.params
     const { _id } = req.params;
-    //? check if category exists
+    //? check if category exists in DB
+    //? if exist => delete category
     const deletedCategory = await Category.findByIdAndDelete(_id);
     if (!deletedCategory) {
         return next(
@@ -173,7 +176,7 @@ const deleteCategory = async (req, res, next) => {
                 "Category not found",
                 404,
                 "Error in deleteCategory API",
-                "at deleteCategory controller"
+                "at Category controller"
             )
         );
     }
@@ -184,15 +187,15 @@ const deleteCategory = async (req, res, next) => {
     await cloudinaryConfig().api.delete_folder(categoryPath);
     //? delete relevant sub-category from database
     const deletedSubCategory = await SubCategory.deleteMany({
-        categoryId: _id,
+        categoryId: deletedCategory._id,
     });
-    //? delete relevant brands from database
+    //? if sub-categories deleted => delete relevant products and brands from database
     if (deletedSubCategory.deletedCount) {
-        await Brand.deleteMany({ categoryId: _id });
+        //? delete relevant brands from database
+        await Brand.deleteMany({ categoryId: deletedCategory._id });
+        //? delete relevant products from database
+        await Product.deleteMany({ categoryId: deletedCategory._id });
     }
-
-    // TODO: delete relevant products from database
-
     //? return response
     res.status(200).json({
         status: "success",
@@ -202,9 +205,86 @@ const deleteCategory = async (req, res, next) => {
 };
 
 /*
-@api {GET} /categories/all (get all category with paginated)
+@api {GET} /categories/all (get all category with pagination)
 */
-//! ========================= Get all categories paginated with its sub-categories ========================= //
+//! ========================= Get all categories paginated with their sub-categories ========================= //
+const getAllCategories = async (req, res, next) => {
+    /*
+      //? destruct data from req.query
+      const { page = 1, limit = 5 } = req.query;
+      const skip = (page - 1) * limit;
+    */
 
+    /*
+      /// => way No.1 using find, limit and skip method ///
+      //? find all categories paginated with their sub-categories
+      const categories = await Category.find()
+          .populate("subCategories")
+          .skip(skip)
+          .limit(limit);
+      //? count total number of pages
+      const count = await Category.countDocuments();
+      //? return response
+      res.status(200).json({
+          status: "success",
+          message: "Categories found successfully",
+          categoriesData: categories,
+          totalPages: Math.ceil(count / limit),
+          currentPage: page,
+      });
+    */
 
-export { createCategory, getCategory, updateCategory, deleteCategory };
+    /*
+      /// => way No.2 using using paginate method from mongoose-paginate-v2 as schema plugin ///
+      //? find all categories paginated with their sub-categories
+      const categories = await Category.paginate(
+          {},
+          {
+              page,
+              limit,
+              skip,
+              populate: ["subCategories"],
+          }
+      );
+      //? return response
+      res.status(200).json({
+          status: "success",
+          message: "Categories found successfully",
+          categoriesData: categories,
+      });
+    */
+
+    /// => way No.3 using api features ///
+    //? destruct data from req.query
+    let { limit = 5, page = 1 } = req.query;
+    if (page < 1) page = 1;
+    if (limit < 1) limit = 5;
+    //? build a query
+    const mongooseQuery = Category.find();
+    const ApiFeaturesInstance = new ApiFeatures(mongooseQuery, req.query)
+        .paginate()
+        .search()
+        .limitFields();
+    //? execute query
+    const categories = await ApiFeaturesInstance.mongooseQuery.populate(
+        "subCategories"
+    );
+    //? count total number of documents
+    const count = await Category.countDocuments();
+    //? send response
+    res.status(200).json({
+        status: "success",
+        message: "Categories found successfully",
+        categoriesData: categories,
+        totalPages: Math.ceil(count / limit),
+        currentPage: page,
+    });
+};
+
+export {
+    createCategory,
+    getCategory,
+    updateCategory,
+    deleteCategory,
+    getAllCategories,
+};

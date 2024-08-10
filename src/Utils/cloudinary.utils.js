@@ -33,8 +33,8 @@ const uploadNewFile = async ({
             new ErrorHandlerClass(
                 "Please upload an image",
                 400,
-                "Error in uploadFile API",
-                "at uploadFile utils",
+                "Error in uploadNewFile API",
+                "at cloudinary utils",
                 { file }
             )
         );
@@ -73,7 +73,7 @@ const uploadUpdatedFile = async ({
                 "Please upload an image",
                 400,
                 "Error in uploadUpdatedFile API",
-                "at uploadUpdatedFile utils",
+                "at cloudinary utils",
                 { file }
             )
         );
@@ -84,7 +84,7 @@ const uploadUpdatedFile = async ({
                 "Please provide old_public_id",
                 400,
                 "Error in uploadUpdatedFile API",
-                "at uploadUpdatedFile utils",
+                "at cloudinary utils",
                 { old_public_id }
             )
         );
@@ -97,7 +97,7 @@ const uploadUpdatedFile = async ({
                 "Old image not found",
                 400,
                 "Error in uploadUpdatedFile API",
-                "at uploadUpdatedFile utils",
+                "at cloudinary utils",
                 { old_public_id }
             )
         );

@@ -1,4 +1,5 @@
-import mongoose from "mongoose";
+//# global setup
+import mongoose from "../global-setup.js";
 
 const { Schema, model } = mongoose;
 
@@ -18,8 +19,7 @@ const categorySchema = new Schema(
             trim: true,
             lowercase: true,
         },
-        images:
-        {
+        images: {
             secure_url: {
                 type: String,
                 required: true,
@@ -40,6 +40,12 @@ const categorySchema = new Schema(
             required: true,
             unique: true,
         },
+        subCategories: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: "SubCategory",
+            },
+        ],
     },
     { timestamps: true, versionKey: "version_key" }
 );

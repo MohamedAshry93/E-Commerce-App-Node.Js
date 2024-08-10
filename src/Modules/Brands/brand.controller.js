@@ -2,11 +2,11 @@ import { nanoid } from "nanoid";
 import slugify from "slugify";
 
 //# utils
-import { ErrorHandlerClass } from "../../Utils/error-class.utils.js";
 import {
     cloudinaryConfig,
     uploadNewFile,
     uploadUpdatedFile,
+    ErrorHandlerClass,
 } from "../../Utils/index.js";
 
 //# models
@@ -28,14 +28,14 @@ const createBrand = async (req, res, next) => {
         _id: subCategory,
         categoryId: category,
     }).populate("categoryId");
-    //? check if sub-category exists
+    //? check if sub-category exists in DB
     if (!isSubCategoryExist) {
         return next(
             new ErrorHandlerClass(
                 `Sub-Category not found`,
                 404,
                 "Error in createBrand API",
-                "at createBrand controller",
+                "at Brand controller",
                 { category, subCategory }
             )
         );
@@ -65,6 +65,7 @@ const createBrand = async (req, res, next) => {
         resource_type: "image",
         use_filename: true,
         tags: ["brandImage"],
+        next,
     });
     //? create brand object
     const brand = {
@@ -79,8 +80,11 @@ const createBrand = async (req, res, next) => {
         subCategoryId: isSubCategoryExist._id,
     };
     //? create brand
-    const newBrand = new Brand(brand);
-    await newBrand.save();
+    const newBrand = await Brand.create(brand);
+    //? update sub-category (add brand to its sub-category)
+    isSubCategoryExist.brands.push(newBrand._id);
+    await isSubCategoryExist.save();
+    //? return response
     return res.status(201).json({
         status: "success",
         message: "Brand created successfully",
@@ -95,13 +99,13 @@ const createBrand = async (req, res, next) => {
 const getBrand = async (req, res, next) => {
     //? destruct data from req.query
     const { name, id, slug } = req.query;
-    const queryFilter = {};
+    const queryFilters = {};
     //? check if query exists
-    if (name) queryFilter.name = name;
-    if (id) queryFilter._id = id;
-    if (slug) queryFilter.slug = slug;
+    if (name) queryFilters.name = name;
+    if (id) queryFilters._id = id;
+    if (slug) queryFilters.slug = slug;
     //? find the brand
-    const brand = await Brand.findOne(queryFilter);
+    const brand = await Brand.findOne(queryFilters);
     //? check if brand exists
     if (!brand) {
         return next(
@@ -109,7 +113,7 @@ const getBrand = async (req, res, next) => {
                 "Brand not found",
                 404,
                 "Error in getBrand API",
-                "at getBrand controller"
+                "at Brand controller"
             )
         );
     }
@@ -128,7 +132,7 @@ const getBrand = async (req, res, next) => {
 const updateBrand = async (req, res, next) => {
     //? destruct id from req.params
     const { _id } = req.params;
-    //? check if brand exists
+    //? check if brand exists in DB
     const brand = await Brand.findById(_id)
         .populate("categoryId")
         .populate("subCategoryId");
@@ -138,7 +142,7 @@ const updateBrand = async (req, res, next) => {
                 "Brand not found",
                 404,
                 "Error in updateBrand API",
-                "at updateBrand controller"
+                "at Brand controller"
             )
         );
     }
@@ -163,6 +167,7 @@ const updateBrand = async (req, res, next) => {
             use_filename: true,
             resource_type: "image",
             tags: ["brandImage"],
+            next,
         });
         brand.logo.secure_url = secure_url;
         brand.logo.public_id = public_id;
@@ -184,43 +189,82 @@ const updateBrand = async (req, res, next) => {
 const deleteBrand = async (req, res, next) => {
     //? destruct id from req.params
     const { _id } = req.params;
-    //? check if brand exists
-    const deletedBrand = await Brand.findByIdAndDelete(_id).populate("categoryId").populate("subCategoryId");
+    //? check if brand exists in DB
+    //? if exist => delete brand
+    const deletedBrand = await Brand.findByIdAndDelete(_id)
+        .populate("categoryId")
+        .populate("subCategoryId");
     if (!deletedBrand) {
         return next(
             new ErrorHandlerClass(
                 "Brand not found",
                 404,
                 "Error in deleteBrand API",
-                "at deleteBrand controller"
+                "at Brand controller"
             )
-        )
+        );
     }
-    const brandPath= `${process.env.UPLOADS_FOLDER}/Categories/${deletedBrand?.categoryId.customId}/Sub-Categories/${deletedBrand?.subCategoryId.customId}/Brands/${deletedBrand?.customId}`;
+    const brandPath = `${process.env.UPLOADS_FOLDER}/Categories/${deletedBrand?.categoryId.customId}/Sub-Categories/${deletedBrand?.subCategoryId.customId}/Brands/${deletedBrand?.customId}`;
     //? delete image from cloudinary
     await cloudinaryConfig().api.delete_resources_by_prefix(brandPath);
     //? delete folder from cloudinary
     await cloudinaryConfig().api.delete_folder(brandPath);
+    //? update sub-category (delete brand from its sub-category)
+    await SubCategory.findByIdAndUpdate(deletedBrand.subCategoryId._id, {
+        $pull: {
+            brands: deletedBrand._id,
+        },
+    });
     //? return response
     res.status(200).json({
         status: "success",
         message: "Brand deleted successfully",
         data: deletedBrand,
     });
-
 };
 
 /*
 @api {GET} /brands/ (get brands for specific subCategory or category or name)
 */
 //! ====================== Get brands for specific subCategory or category or name ====================== //
-
+const getBrands = async (req, res, next) => {
+    //? destruct data from req.query
+    const { category, subCategory, name } = req.query;
+    const queryFilters = {};
+    //? check if query exists
+    if (category) queryFilters.categoryId = category;
+    if (subCategory) queryFilters.subCategoryId = subCategory;
+    if (name) queryFilters.name = name;
+    //? find the brands
+    const brands = await Brand.find(queryFilters);
+    //? return response
+    res.status(200).json({
+        status: "success",
+        message: "Brands found successfully",
+        data: brands,
+    });
+};
 
 /*
 @api {GET} /brands/all (get all brands with its products)
 */
-//! ========================================== Get all brands with its products ========================================== //
+//! ================================ Get all brands with their products ================================ //
+const getAllBrands = async (req, res, next) => {
+    //? find the brands with their products
+    const brands = await Brand.find().populate("products");
+    //? return response
+    res.status(200).json({
+        status: "success",
+        message: "Brands found successfully",
+        data: brands,
+    });
+};
 
-
-
-export { createBrand, getBrand, updateBrand, deleteBrand };
+export {
+    createBrand,
+    getBrand,
+    updateBrand,
+    deleteBrand,
+    getAllBrands,
+    getBrands,
+};

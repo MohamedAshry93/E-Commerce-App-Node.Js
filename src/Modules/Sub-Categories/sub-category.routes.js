@@ -24,6 +24,12 @@ subCategoryRouter.post(
     middleware.errorHandling(subCategoryController.createSubCategory)
 );
 
+//# get all sub-categories API router
+subCategoryRouter.get(
+    "/all",
+    middleware.errorHandling(subCategoryController.getAllSubCategories)
+);
+
 //# get sub-category API router
 subCategoryRouter.get(
     "/",

@@ -2,11 +2,12 @@ import { nanoid } from "nanoid";
 import slugify from "slugify";
 
 //# utils
-import { ErrorHandlerClass } from "../../Utils/error-class.utils.js";
 import {
     cloudinaryConfig,
     uploadNewFile,
     uploadUpdatedFile,
+    ErrorHandlerClass,
+    ApiFeatures,
 } from "../../Utils/index.js";
 
 //# models
@@ -14,6 +15,7 @@ import {
     Brand,
     Category,
     SubCategory,
+    Product,
 } from "./../../../database/Models/index.js";
 
 //# APIS
@@ -25,14 +27,14 @@ const createSubCategory = async (req, res, next) => {
     //? destruct categoryId from req.query
     const { categoryId } = req.query;
     const category = await Category.findById(categoryId);
-    //? check if category exists
+    //? check if category exists in DB
     if (!category) {
         return next(
             new ErrorHandlerClass(
                 `Category not found`,
                 404,
                 "Error in createSubCategory API",
-                "at createSubCategory controller",
+                "at SubCategory controller",
                 { categoryId }
             )
         );
@@ -62,6 +64,7 @@ const createSubCategory = async (req, res, next) => {
         resource_type: "image",
         use_filename: true,
         tags: ["subCategoryImage"],
+        next,
     });
     //? create sub-category object
     const subCategory = {
@@ -76,6 +79,9 @@ const createSubCategory = async (req, res, next) => {
     };
     //? create sub-category to database
     const newSubCategory = await SubCategory.create(subCategory);
+    //? update category sub-categories array
+    category.subCategories.push(newSubCategory._id);
+    await category.save();
     //? return response
     res.status(201).json({
         status: "success",
@@ -91,13 +97,13 @@ const createSubCategory = async (req, res, next) => {
 const getSubCategory = async (req, res, next) => {
     //? destruct data from req.query
     const { name, id, slug } = req.query;
-    const queryFilter = {};
+    const queryFilters = {};
     //? check if query exists
-    if (name) queryFilter.name = name;
-    if (id) queryFilter._id = id;
-    if (slug) queryFilter.slug = slug;
+    if (name) queryFilters.name = name;
+    if (id) queryFilters._id = id;
+    if (slug) queryFilters.slug = slug;
     //? find the sub-category
-    const subCategory = await SubCategory.findOne(queryFilter);
+    const subCategory = await SubCategory.findOne(queryFilters);
     //? check if sub-category exists
     if (!subCategory) {
         return next(
@@ -105,7 +111,7 @@ const getSubCategory = async (req, res, next) => {
                 "Sub-Category not found",
                 404,
                 "Error in getSubCategory API",
-                "at getSubCategory controller"
+                "at SubCategory controller"
             )
         );
     }
@@ -124,7 +130,7 @@ const getSubCategory = async (req, res, next) => {
 const updateSubCategory = async (req, res, next) => {
     //? destruct id from req.params
     const { _id } = req.params;
-    //? check if category exists
+    //? check if category exists in DB
     const subCategory = await SubCategory.findById(_id).populate("categoryId");
     if (!subCategory) {
         return next(
@@ -132,7 +138,7 @@ const updateSubCategory = async (req, res, next) => {
                 "Sub-Category not found",
                 404,
                 "Error in updateSubCategory API",
-                "at updateSubCategory controller"
+                "at SubCategory controller"
             )
         );
     }
@@ -159,6 +165,7 @@ const updateSubCategory = async (req, res, next) => {
             use_filename: true,
             resource_type: "image",
             tags: ["subCategoryImage"],
+            next,
         });
         subCategory.images.secure_url = secure_url;
         subCategory.images.public_id = public_id;
@@ -180,7 +187,8 @@ const updateSubCategory = async (req, res, next) => {
 const deleteSubCategory = async (req, res, next) => {
     //? destruct id from req.params
     const { _id } = req.params;
-    //? check if sub-category exists
+    //? check if sub-category exists in DB
+    //? if exist => delete sub-category
     const deletedSubCategory = await SubCategory.findByIdAndDelete(_id).populate(
         "categoryId"
     );
@@ -190,7 +198,7 @@ const deleteSubCategory = async (req, res, next) => {
                 "Sub-Category not found",
                 404,
                 "Error in deleteSubCategory API",
-                "at deleteSubCategory controller"
+                "at SubCategory controller"
             )
         );
     }
@@ -201,9 +209,12 @@ const deleteSubCategory = async (req, res, next) => {
     await cloudinaryConfig().api.delete_folder(subCategoryPath);
     //? delete relevant brands from database
     await Brand.deleteMany({ subCategoryId: deletedSubCategory._id });
-
-    // TODO: delete relevant products from database
-
+    //? delete relevant products from database
+    await Product.deleteMany({ subCategoryId: deletedSubCategory._id });
+    //? update category (delete sub-category id from category)
+    await Category.findByIdAndUpdate(deletedSubCategory.categoryId._id, {
+        $pull: { subCategories: deletedSubCategory._id },
+    });
     //? return response
     res.status(200).json({
         status: "success",
@@ -213,14 +224,86 @@ const deleteSubCategory = async (req, res, next) => {
 };
 
 /*
-@api {GET} /sub-categories/all (get all sub-category with paginated)
+@api {GET} /sub-categories/all (get all sub-category with pagination)
 */
-//! =========================== Get all subCategories paginated with it’s brands =========================== //
+//! =========================== Get all subCategories paginated with their brands =========================== //
+const getAllSubCategories = async (req, res, next) => {
+    /*
+      //? destruct data from req.query
+        const { page = 1, limit = 5 } = req.query;
+        const skip = (page - 1) * limit;
+    */
+    
+    /*
+    /// => way No.1 using find, limit and skip method ///
+      //? find all subCategories paginated with their brands
+    const subCategories = await SubCategory.find()
+        .populate("brands")
+        .limit(limit)
+        .skip(skip);
+      //? count total number of pages
+        const count = await SubCategory.countDocuments();
+      //? return response
+        res.status(200).json({
+            status: "success",
+            message: "Sub-Categories found successfully",
+            subCategoriesData: subCategories,
+            totalPages: Math.ceil(count / limit),
+            currentPage: page,
+        });
+    */
 
+    /*
+    /// => way No.2 using using paginate method from mongoose-paginate-v2 as schema plugin ///
+      //? find all subCategories paginated with their brands
+        const subCategories = await SubCategory.paginate(
+            {},
+            {
+                populate: "brands",
+                limit,
+                page,
+                skip,
+            }
+        );
+      //? return response
+        res.status(200).json({
+            status: "success",
+            message: "Sub-Categories found successfully",
+            subCategoriesData: subCategories,
+        });
+    */
+
+    /// => way No.3 using api features ///
+    //? destruct data from req.query
+    let { limit = 5, page = 1 } = req.query;
+    if (page < 1) page = 1;
+    if (limit < 1) limit = 5;
+    //? build a query
+    const mongooseQuery = SubCategory.find();
+    const ApiFeaturesInstance = new ApiFeatures(mongooseQuery, req.query)
+        .paginate()
+        .search()
+        .limitFields();
+    //? execute query
+    const subCategories = await ApiFeaturesInstance.mongooseQuery.populate(
+        "brands"
+    );
+    //? count total number of documents
+    const count = await SubCategory.countDocuments();
+    //? send response
+    res.status(200).json({
+        status: "success",
+        message: "SubCategories found successfully",
+        subCategoriesData: subCategories,
+        totalPages: Math.ceil(count / limit),
+        currentPage: page,
+    });
+};
 
 export {
     createSubCategory,
     getSubCategory,
     updateSubCategory,
     deleteSubCategory,
+    getAllSubCategories,
 };

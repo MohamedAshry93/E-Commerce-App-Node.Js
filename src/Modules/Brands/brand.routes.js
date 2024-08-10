@@ -24,6 +24,15 @@ brandRouter.post(
     middleware.errorHandling(brandController.createBrand)
 );
 
+//# get all brands API router
+brandRouter.get("/all", middleware.errorHandling(brandController.getAllBrands));
+
+//# get brands for specific subCategory or category or name API routers
+brandRouter.get(
+    "/all-brands",
+    middleware.errorHandling(brandController.getBrands)
+);
+
 //# get brand API router
 brandRouter.get("/", middleware.errorHandling(brandController.getBrand));
 

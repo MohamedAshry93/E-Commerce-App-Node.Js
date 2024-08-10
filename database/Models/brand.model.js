@@ -1,4 +1,5 @@
-import mongoose from "mongoose";
+//# global setup
+import mongoose from "../global-setup.js";
 
 const { Schema, model } = mongoose;
 
@@ -17,6 +18,12 @@ const brandSchema = new Schema(
             unique: true,
             trim: true,
             lowercase: true,
+            default: function () {
+                return slugify(this.name, {
+                    trim: true,
+                    lower: true,
+                });
+            },
         },
         logo: {
             secure_url: {
@@ -49,6 +56,12 @@ const brandSchema = new Schema(
             required: true,
             unique: true,
         },
+        products: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: "Product",
+            },
+        ],
     },
     { timestamps: true, versionKey: "version_key" }
 );
