@@ -5,9 +5,10 @@ const { Schema, model } = mongoose;
 
 const subCategorySchema = new Schema(
     {
+        //# Strings section
         name: {
             type: String,
-            required: true,
+            required: [true, "subCategory name is required"],
             unique: true,
             trim: true,
             lowercase: true,
@@ -19,6 +20,7 @@ const subCategorySchema = new Schema(
             trim: true,
             lowercase: true,
         },
+        //# Images section
         images: {
             secure_url: {
                 type: String,
@@ -30,10 +32,11 @@ const subCategorySchema = new Schema(
                 unique: true,
             },
         },
+        //# Ids section
         createdBy: {
             type: Schema.Types.ObjectId,
             ref: "User",
-            required: false, //TODO: change to true after authentication
+            required: true,
         },
         categoryId: {
             type: Schema.Types.ObjectId,

@@ -19,6 +19,8 @@ import { Product, Brand } from "../../../database/Models/index.js";
 */
 //! ========================================== Create Product ========================================== //
 const createProduct = async (req, res, next) => {
+    //? destruct data from req.authUser
+    const { _id } = req.authUser;
     //? destruct data from req.body
     const {
         title,
@@ -41,8 +43,6 @@ const createProduct = async (req, res, next) => {
             )
         );
     }
-    console.log({ specs });
-
     //# Ids check
     const brandDocument = req.document;
     //? images section
@@ -85,13 +85,37 @@ const createProduct = async (req, res, next) => {
         brandId: brandDocument._id,
         categoryId: brandDocument.categoryId._id,
         subCategoryId: brandDocument.subCategoryId._id,
+        createdBy: _id,
     };
     //? create product
     const newProduct = await Product.create(product);
+    //? check if new product created or not
+    if (!newProduct) {
+        return next(
+            new ErrorHandlerClass(
+                "Product not created, please try again",
+                400,
+                "Error in createProduct API",
+                "at Product controller",
+                { product }
+            )
+        );
+    }
     //? update brand (add product id to its brand)
     await Brand.findByIdAndUpdate(brandDocument._id, {
         $push: { products: newProduct._id },
     });
+    //? check if new product id added to products array or not
+    if (brandDocument.products.includes(newProduct._id)) {
+        return next(
+            new ErrorHandlerClass(
+                "Product id not added to products array in brand",
+                400,
+                "Error in createProduct API",
+                "at Product controller",
+            )
+        );
+    }
     //? send response
     res.status(201).json({
         status: "success",
@@ -150,8 +174,8 @@ const getAllProducts = async (req, res, next) => {
         const parsedFilters = JSON.parse(replacedFilters);
     */
 
-    /// => way No.1 using find, limit and skip method ///
     /*
+    /// => way No.1 using find, limit and skip method ///
     //? find all products with pagination
         const products = await Product.find(parsedFilters)
             .limit(limit)
@@ -170,8 +194,8 @@ const getAllProducts = async (req, res, next) => {
         });
     */
 
-    /// => way No.2 using using paginate method from mongoose-paginate-v2 as schema plugin ///
     /*
+    /// => way No.2 using using paginate method from mongoose-paginate-v2 as schema plugin ///
     //? find all products with pagination
         const products = await Product.paginate(parsedFilters, {
             page,
@@ -318,12 +342,24 @@ const updateProduct = async (req, res, next) => {
         product.images.URLs = URLs;
     }
     //? save the product
-    await product.save();
+    const updatedProduct = await product.save();
+    //? check if product updated or not
+    if (!updatedProduct) {
+        return next(
+            new ErrorHandlerClass(
+                "Product not updated, please try again",
+                400,
+                "Error in updateProduct API",
+                "at Product controller",
+                { product }
+            )
+        )
+    }
     //? return response
     res.status(200).json({
         status: "success",
         message: "Product updated successfully",
-        data: product,
+        data: updatedProduct,
     });
 };
 

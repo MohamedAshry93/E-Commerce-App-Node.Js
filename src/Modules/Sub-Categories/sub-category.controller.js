@@ -24,6 +24,8 @@ import {
 */
 //! ========================================== Create Sub-Category ========================================== //
 const createSubCategory = async (req, res, next) => {
+    //? destruct data from req.authUser
+    const { _id } = req.authUser;
     //? destruct categoryId from req.query
     const { categoryId } = req.query;
     const category = await Category.findById(categoryId);
@@ -76,12 +78,36 @@ const createSubCategory = async (req, res, next) => {
         },
         customId,
         categoryId: category._id,
+        createdBy: _id,
     };
     //? create sub-category to database
     const newSubCategory = await SubCategory.create(subCategory);
+    //? check if sub-category created or not
+    if (!newSubCategory) {
+        return next(
+            new ErrorHandlerClass(
+                "Sub-Category not created, please try again",
+                400,
+                "Error in createSubCategory API",
+                "at SubCategory controller",
+                { subCategory }
+            )
+        );
+    }
     //? update category sub-categories array
     category.subCategories.push(newSubCategory._id);
     await category.save();
+    //? check if new subCategory id added to sub-categories array or not
+    if (!category.subCategories.includes(newSubCategory._id)) {
+        return next(
+            new ErrorHandlerClass(
+                "Sub-Category id not added to sub-categories array in category",
+                400,
+                "Error in createSubCategory API",
+                "at SubCategory controller"
+            )
+        );
+    }
     //? return response
     res.status(201).json({
         status: "success",
@@ -103,7 +129,9 @@ const getSubCategory = async (req, res, next) => {
     if (id) queryFilters._id = id;
     if (slug) queryFilters.slug = slug;
     //? find the sub-category
-    const subCategory = await SubCategory.findOne(queryFilters);
+    const subCategory = await SubCategory.findOne(queryFilters).select(
+        "-createdAt -updatedAt -version_key"
+    );
     //? check if sub-category exists
     if (!subCategory) {
         return next(
@@ -170,8 +198,21 @@ const updateSubCategory = async (req, res, next) => {
         subCategory.images.secure_url = secure_url;
         subCategory.images.public_id = public_id;
     }
+    subCategory.version_key += 1;
     //? update sub-category
     const updatedSubCategory = await subCategory.save();
+    //? check if sub-category updated or not
+    if (!updatedSubCategory) {
+        return next(
+            new ErrorHandlerClass(
+                "Sub-Category not updated, please try again",
+                400,
+                "Error in updateSubCategory API",
+                "at SubCategory controller",
+                { subCategory }
+            )
+        );
+    }
     //? return response
     res.status(200).json({
         status: "success",
@@ -229,49 +270,49 @@ const deleteSubCategory = async (req, res, next) => {
 //! =========================== Get all subCategories paginated with their brands =========================== //
 const getAllSubCategories = async (req, res, next) => {
     /*
-      //? destruct data from req.query
-        const { page = 1, limit = 5 } = req.query;
-        const skip = (page - 1) * limit;
-    */
-    
-    /*
-    /// => way No.1 using find, limit and skip method ///
-      //? find all subCategories paginated with their brands
-    const subCategories = await SubCategory.find()
-        .populate("brands")
-        .limit(limit)
-        .skip(skip);
-      //? count total number of pages
-        const count = await SubCategory.countDocuments();
-      //? return response
-        res.status(200).json({
-            status: "success",
-            message: "Sub-Categories found successfully",
-            subCategoriesData: subCategories,
-            totalPages: Math.ceil(count / limit),
-            currentPage: page,
-        });
-    */
+        //? destruct data from req.query
+          const { page = 1, limit = 5 } = req.query;
+          const skip = (page - 1) * limit;
+      */
 
     /*
-    /// => way No.2 using using paginate method from mongoose-paginate-v2 as schema plugin ///
-      //? find all subCategories paginated with their brands
-        const subCategories = await SubCategory.paginate(
-            {},
-            {
-                populate: "brands",
-                limit,
-                page,
-                skip,
-            }
-        );
-      //? return response
-        res.status(200).json({
-            status: "success",
-            message: "Sub-Categories found successfully",
-            subCategoriesData: subCategories,
-        });
-    */
+      /// => way No.1 using find, limit and skip method ///
+        //? find all subCategories paginated with their brands
+      const subCategories = await SubCategory.find()
+          .populate("brands")
+          .limit(limit)
+          .skip(skip);
+        //? count total number of pages
+          const count = await SubCategory.countDocuments();
+        //? return response
+          res.status(200).json({
+              status: "success",
+              message: "Sub-Categories found successfully",
+              subCategoriesData: subCategories,
+              totalPages: Math.ceil(count / limit),
+              currentPage: page,
+          });
+      */
+
+    /*
+      /// => way No.2 using using paginate method from mongoose-paginate-v2 as schema plugin ///
+        //? find all subCategories paginated with their brands
+          const subCategories = await SubCategory.paginate(
+              {},
+              {
+                  populate: "brands",
+                  limit,
+                  page,
+                  skip,
+              }
+          );
+        //? return response
+          res.status(200).json({
+              status: "success",
+              message: "Sub-Categories found successfully",
+              subCategoriesData: subCategories,
+          });
+      */
 
     /// => way No.3 using api features ///
     //? destruct data from req.query

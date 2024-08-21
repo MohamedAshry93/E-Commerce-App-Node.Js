@@ -17,7 +17,7 @@ const productSchema = new Schema(
         //# Strings section
         title: {
             type: String,
-            required: true,
+            required: [true, "Product name is required"],
             trim: true,
         },
         slug: {
@@ -32,7 +32,10 @@ const productSchema = new Schema(
             },
         },
         description: String,
-        specs: Object,
+        specs: {
+            type: Map,
+            of: String | Number,
+        },
         badge: {
             type: String,
             enum: Object.values(Badges),
@@ -40,7 +43,7 @@ const productSchema = new Schema(
         //# Numbers section
         price: {
             type: Number,
-            required: true,
+            required: [true, "Product price is required"],
             min: 50,
         },
         appliedDiscount: {
@@ -64,7 +67,7 @@ const productSchema = new Schema(
         },
         stock: {
             type: Number,
-            required: true,
+            required: [true, "Product stock is required"],
             min: 1,
         },
         rating: {
@@ -98,7 +101,7 @@ const productSchema = new Schema(
         createdBy: {
             type: Schema.Types.ObjectId,
             ref: "User",
-            required: false, //TODO: change to true after authentication
+            required: true,
         },
         subCategoryId: {
             type: Schema.Types.ObjectId,

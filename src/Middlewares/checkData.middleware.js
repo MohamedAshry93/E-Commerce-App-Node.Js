@@ -1,6 +1,9 @@
 //# utils
 import { ErrorHandlerClass } from "../Utils/index.js";
 
+//# models
+import { User } from "../../database/Models/index.js";
+
 //! ===================================== Check Model by Name ===================================== //
 const modelNameExist = (model) => {
     return async (req, res, next) => {
@@ -31,7 +34,7 @@ const checkIdsExist = (model) => {
     return async (req, res, next) => {
         //? destruct categoryId, subCategoryId and brandId from req.query
         const { categoryId, subCategoryId, brandId } = req.query;
-        //? check Ids
+        //? check Ids exists in database
         const brandDocument = await model
             .findOne({
                 _id: brandId,
@@ -54,9 +57,33 @@ const checkIdsExist = (model) => {
                 )
             );
         }
+        //? set brandDocument to req.document
         req.document = brandDocument;
         next();
     };
 };
 
-export { modelNameExist, checkIdsExist };
+//! ===================================== Check User Data ===================================== //
+const checkUserDataExist = () => {
+    return async (req, res, next) => {
+        //? destruct data from req.body
+        const { userName, email } = req.body;
+        //? check if user exists
+        const user = await User.findOne({ $or: [{ userName }, { email }] });
+        //? check if user exists in database
+        if (user) {
+            return next(
+                new ErrorHandlerClass(
+                    "user data already exist",
+                    400,
+                    "Error in checkUserDataExist API",
+                    "at checkData middleware",
+                    { userName, email }
+                )
+            );
+        }
+        next();
+    };
+};
+
+export { modelNameExist, checkIdsExist, checkUserDataExist };

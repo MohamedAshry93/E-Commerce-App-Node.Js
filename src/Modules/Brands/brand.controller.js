@@ -10,11 +10,7 @@ import {
 } from "../../Utils/index.js";
 
 //# models
-import {
-    Brand,
-    Category,
-    SubCategory,
-} from "../../../database/Models/index.js";
+import { Brand, SubCategory } from "../../../database/Models/index.js";
 
 //# APIS
 /*
@@ -22,8 +18,11 @@ import {
 */
 //! ========================================== Create Brand ========================================== //
 const createBrand = async (req, res, next) => {
+    //? destruct data from req.authUser;
+    const { _id } = req.authUser;
     //? destruct categoryId and subCategoryId from req.query
     const { category, subCategory } = req.query;
+    //? check if category and sub-category exists in DB
     const isSubCategoryExist = await SubCategory.findById({
         _id: subCategory,
         categoryId: category,
@@ -78,12 +77,36 @@ const createBrand = async (req, res, next) => {
         customId,
         categoryId: isSubCategoryExist.categoryId._id,
         subCategoryId: isSubCategoryExist._id,
+        createdBy: _id,
     };
     //? create brand
     const newBrand = await Brand.create(brand);
+    //? check if brand created or not
+    if (!newBrand) {
+        return next(
+            new ErrorHandlerClass(
+                "Brand not created, please try again",
+                400,
+                "Error in createBrand API",
+                "at Brand controller",
+                { brand }
+            )
+        );
+    }
     //? update sub-category (add brand to its sub-category)
     isSubCategoryExist.brands.push(newBrand._id);
     await isSubCategoryExist.save();
+    //? check if new brand id added to brands array or not
+    if (!isSubCategoryExist.brands.includes(newBrand._id)) {
+        return next(
+            new ErrorHandlerClass(
+                "Brand id not added to brands array in subCategory, please try again",
+                400,
+                "Error in createBrand API",
+                "at Brand controller"
+            )
+        );
+    }
     //? return response
     return res.status(201).json({
         status: "success",
@@ -172,8 +195,21 @@ const updateBrand = async (req, res, next) => {
         brand.logo.secure_url = secure_url;
         brand.logo.public_id = public_id;
     }
+    brand.version_key += 1;
     //? update brand
     const updatedBrand = await brand.save();
+    //? check if brand updated or not
+    if (!updatedBrand) {
+        return next(
+            new ErrorHandlerClass(
+                "Brand not updated, please try again",
+                400,
+                "Error in updateBrand API",
+                "at Brand controller",
+                { brand }
+            )
+        );
+    }
     //? return response
     res.status(200).json({
         status: "success",
@@ -237,6 +273,17 @@ const getBrands = async (req, res, next) => {
     if (name) queryFilters.name = name;
     //? find the brands
     const brands = await Brand.find(queryFilters);
+    //? check if brands found or not
+    if (!brands.length) {
+        return next(
+            new ErrorHandlerClass(
+                "Brands not found",
+                404,
+                "Error in getBrands API",
+                "at Brand controller"
+            )
+        );
+    }
     //? return response
     res.status(200).json({
         status: "success",
@@ -246,7 +293,7 @@ const getBrands = async (req, res, next) => {
 };
 
 /*
-@api {GET} /brands/all (get all brands with its products)
+@api {GET} /brands/list (get all brands with its products)
 */
 //! ================================ Get all brands with their products ================================ //
 const getAllBrands = async (req, res, next) => {

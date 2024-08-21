@@ -9,4 +9,14 @@ const DiscountType = {
     FIXED: "Fixed",
 };
 
-export { Badges, DiscountType };
+const systemRoles = {
+    COMPANY_ADMIN: "Company_ADMIN",
+    USER: "User",
+};
+
+const Gender = {
+    MALE: "Male",
+    FEMALE: "Female",
+};
+
+export { Badges, DiscountType, systemRoles, Gender };

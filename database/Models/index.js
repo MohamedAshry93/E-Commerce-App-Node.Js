@@ -7,3 +7,4 @@ export * from "./review.model.js";
 export * from "./user.model.js";
 export * from "./sub-category.model.js";
 export * from "./cart.model.js";
+export * from "./addresses.model.js";

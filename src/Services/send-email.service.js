@@ -1,16 +1,25 @@
 import nodemailer from "nodemailer";
 
-const sendEmailService = async (to, cc, subject, text, html, attachments) => {
+const sendEmailService = async ({
+    to,
+    cc,
+    subject,
+    text,
+    html,
+    attachments,
+} = {}) => {
+    //? create reusable transporter object using the default SMTP transport
     const transporter = nodemailer.createTransport({
         service: "gmail",
         host: "localhost",
         port: 587,
         secure: false,
         auth: {
-            user: "mohamedashry593@gmail.com",
-            pass: "ajvdpbohoapbydvi",
+            user: process.env.USER_EMAIL,
+            pass: process.env.USER_PASS,
         },
     });
+    //? send mail with defined transport object
     const info = await transporter.sendMail({
         from: '"3shry 👀" <mohamedashry593@gmail.com>', // sender address
         to: to ? to : "",

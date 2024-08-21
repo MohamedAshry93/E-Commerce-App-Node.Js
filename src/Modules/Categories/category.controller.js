@@ -26,6 +26,8 @@ import {
 const createCategory = async (req, res, next) => {
     //? destruct data from req.body
     const { name } = req.body;
+    //? destruct data from req.authUser
+    const { _id } = req.authUser;
     //? generate category slug
     const slug = slugify(name, {
         trim: true,
@@ -60,9 +62,22 @@ const createCategory = async (req, res, next) => {
             public_id,
         },
         customId,
+        createdBy: _id
     };
     //? create category to database
     const newCategory = await Category.create(category);
+    //? check if category created or not
+    if (!newCategory) {
+        return next(
+            new ErrorHandlerClass(
+                "Category not created, please try again",
+                400,
+                "Error in createCategory API",
+                "at Category controller",
+                { category }
+            )
+        );
+    }
     //? return response
     res.status(201).json({
         status: "success",
@@ -84,7 +99,7 @@ const getCategory = async (req, res, next) => {
     if (id) queryFilters._id = id;
     if (slug) queryFilters.slug = slug;
     //? find the category
-    const category = await Category.findOne(queryFilters);
+    const category = await Category.findOne(queryFilters).select("-createdAt -updatedAt -version_key");
     //? check if category exists
     if (!category) {
         return next(
@@ -150,8 +165,21 @@ const updateCategory = async (req, res, next) => {
         category.images.secure_url = secure_url;
         category.images.public_id = public_id;
     }
+    category.version_key += 1;
     //? update category
     const updatedCategory = await category.save();
+    //? check if category updated or not
+    if (!updatedCategory) {
+        return next(
+            new ErrorHandlerClass(
+                "Category not updated, please try again",
+                400,
+                "Error in updateCategory API",
+                "at Category controller",
+                { category }
+            )
+        );
+    }
     //? return response
     res.status(200).json({
         status: "success",
@@ -186,15 +214,20 @@ const deleteCategory = async (req, res, next) => {
     //? delete folder from cloudinary
     await cloudinaryConfig().api.delete_folder(categoryPath);
     //? delete relevant sub-category from database
-    const deletedSubCategory = await SubCategory.deleteMany({
+    const deletedSubCategories = await SubCategory.deleteMany({
         categoryId: deletedCategory._id,
     });
     //? if sub-categories deleted => delete relevant products and brands from database
-    if (deletedSubCategory.deletedCount) {
+    if (deletedSubCategories.deletedCount) {
         //? delete relevant brands from database
-        await Brand.deleteMany({ categoryId: deletedCategory._id });
-        //? delete relevant products from database
-        await Product.deleteMany({ categoryId: deletedCategory._id });
+        const deletedBrands = await Brand.deleteMany({
+            categoryId: deletedCategory._id,
+        });
+        //? if brands deleted => delete relevant products from database
+        if (deletedBrands.deletedCount) {
+            //? delete relevant products from database
+            await Product.deleteMany({ categoryId: deletedCategory._id });
+        }
     }
     //? return response
     res.status(200).json({
@@ -210,49 +243,49 @@ const deleteCategory = async (req, res, next) => {
 //! ========================= Get all categories paginated with their sub-categories ========================= //
 const getAllCategories = async (req, res, next) => {
     /*
-      //? destruct data from req.query
-      const { page = 1, limit = 5 } = req.query;
-      const skip = (page - 1) * limit;
-    */
+        //? destruct data from req.query
+        const { page = 1, limit = 5 } = req.query;
+        const skip = (page - 1) * limit;
+      */
 
     /*
-      /// => way No.1 using find, limit and skip method ///
-      //? find all categories paginated with their sub-categories
-      const categories = await Category.find()
-          .populate("subCategories")
-          .skip(skip)
-          .limit(limit);
-      //? count total number of pages
-      const count = await Category.countDocuments();
-      //? return response
-      res.status(200).json({
-          status: "success",
-          message: "Categories found successfully",
-          categoriesData: categories,
-          totalPages: Math.ceil(count / limit),
-          currentPage: page,
-      });
-    */
+        /// => way No.1 using find, limit and skip method ///
+        //? find all categories paginated with their sub-categories
+        const categories = await Category.find()
+            .populate("subCategories")
+            .skip(skip)
+            .limit(limit);
+        //? count total number of pages
+        const count = await Category.countDocuments();
+        //? return response
+        res.status(200).json({
+            status: "success",
+            message: "Categories found successfully",
+            categoriesData: categories,
+            totalPages: Math.ceil(count / limit),
+            currentPage: page,
+        });
+      */
 
     /*
-      /// => way No.2 using using paginate method from mongoose-paginate-v2 as schema plugin ///
-      //? find all categories paginated with their sub-categories
-      const categories = await Category.paginate(
-          {},
-          {
-              page,
-              limit,
-              skip,
-              populate: ["subCategories"],
-          }
-      );
-      //? return response
-      res.status(200).json({
-          status: "success",
-          message: "Categories found successfully",
-          categoriesData: categories,
-      });
-    */
+        /// => way No.2 using using paginate method from mongoose-paginate-v2 as schema plugin ///
+        //? find all categories paginated with their sub-categories
+        const categories = await Category.paginate(
+            {},
+            {
+                page,
+                limit,
+                skip,
+                populate: ["subCategories"],
+            }
+        );
+        //? return response
+        res.status(200).json({
+            status: "success",
+            message: "Categories found successfully",
+            categoriesData: categories,
+        });
+      */
 
     /// => way No.3 using api features ///
     //? destruct data from req.query

@@ -5,9 +5,10 @@ const { Schema, model } = mongoose;
 
 const brandSchema = new Schema(
     {
+        //# Strings section
         name: {
             type: String,
-            required: true,
+            required: [true,"Brand name is required"],
             unique: true,
             trim: true,
             lowercase: true,
@@ -25,6 +26,7 @@ const brandSchema = new Schema(
                 });
             },
         },
+        //# logo section
         logo: {
             secure_url: {
                 type: String,
@@ -36,10 +38,11 @@ const brandSchema = new Schema(
                 unique: true,
             },
         },
+        //# Ids section
         createdBy: {
             type: Schema.Types.ObjectId,
             ref: "User",
-            required: false, //TODO: change to true after authentication
+            required: true,
         },
         subCategoryId: {
             type: Schema.Types.ObjectId,
