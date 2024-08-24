@@ -1,16 +1,17 @@
+//# dependencies
 import { Router } from "express";
 
-//# controller
+//# controllers
 import * as addressController from "./address.controller.js";
 
-//# schema
+//# schemas
 import * as addressSchema from "./address.schema.js";
 
 //# middlewares
 import * as middleware from "../../Middlewares/index.js";
 
 //# utils
-import { systemRoles } from "../../Utils/enums.utils.js";
+import { SystemRoles } from "../../Utils/index.js";
 
 const addressRouter = Router();
 
@@ -19,7 +20,7 @@ addressRouter.post(
     "/add-address",
     middleware.errorHandling(middleware.authenticationMiddleware()),
     middleware.errorHandling(
-        middleware.authorizationMiddleware(systemRoles.USER)
+        middleware.authorizationMiddleware(SystemRoles.USER)
     ),
     middleware.errorHandling(
         middleware.validationMiddleware(addressSchema.addAddressSchema)
@@ -32,7 +33,7 @@ addressRouter.put(
     "/update-address/:addressId",
     middleware.errorHandling(middleware.authenticationMiddleware()),
     middleware.errorHandling(
-        middleware.authorizationMiddleware(systemRoles.USER)
+        middleware.authorizationMiddleware(SystemRoles.USER)
     ),
     middleware.errorHandling(
         middleware.validationMiddleware(addressSchema.editAddressSchema)
@@ -45,7 +46,7 @@ addressRouter.put(
     "/soft-delete/:addressId",
     middleware.errorHandling(middleware.authenticationMiddleware()),
     middleware.errorHandling(
-        middleware.authorizationMiddleware(systemRoles.USER)
+        middleware.authorizationMiddleware(SystemRoles.USER)
     ),
     middleware.errorHandling(
         middleware.validationMiddleware(addressSchema.removeAddressSchema)

@@ -1,16 +1,17 @@
+//# dependencies
 import { Router } from "express";
 
-//# controller
+//# controllers
 import * as brandController from "./brand.controller.js";
 
-//# schema
+//# schemas
 import * as brandSchema from "./brand.schema.js";
 
 //# middlewares
 import * as middleware from "../../Middlewares/index.js";
 
 //# utils
-import { extensions, systemRoles } from "../../Utils/index.js";
+import { extensions, SystemRoles } from "../../Utils/index.js";
 
 //# models
 import { Brand } from "../../../database/Models/index.js";
@@ -22,7 +23,7 @@ brandRouter.post(
     "/create",
     middleware.errorHandling(middleware.authenticationMiddleware()),
     middleware.errorHandling(
-        middleware.authorizationMiddleware(systemRoles.COMPANY_ADMIN)
+        middleware.authorizationMiddleware(SystemRoles.COMPANY_ADMIN)
     ),
     middleware.errorHandling(
         middleware
@@ -61,7 +62,7 @@ brandRouter.get(
 brandRouter.put(
     "/update/:_id",
     middleware.errorHandling(middleware.authenticationMiddleware()),
-    middleware.errorHandling(middleware.authorizationMiddleware(systemRoles.COMPANY_ADMIN)),
+    middleware.errorHandling(middleware.authorizationMiddleware(SystemRoles.COMPANY_ADMIN)),
     middleware.errorHandling(
         middleware
             .multerHostMiddleware({ allowedExtensions: extensions.IMAGE_EXTENSIONS })
@@ -78,7 +79,7 @@ brandRouter.put(
 brandRouter.delete(
     "/delete/:_id",
     middleware.errorHandling(middleware.authenticationMiddleware()),
-    middleware.errorHandling(middleware.authorizationMiddleware(systemRoles.COMPANY_ADMIN)),
+    middleware.errorHandling(middleware.authorizationMiddleware(SystemRoles.COMPANY_ADMIN)),
     middleware.errorHandling(
         middleware.validationMiddleware(brandSchema.deleteBrandSchema)
     ),

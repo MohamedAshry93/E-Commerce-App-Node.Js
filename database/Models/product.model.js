@@ -1,3 +1,4 @@
+//# dependencies
 import slugify from "slugify";
 
 //# global setup
@@ -12,6 +13,7 @@ import {
 
 const { Schema, model } = mongoose;
 
+//# create product schema
 const productSchema = new Schema(
     {
         //# Strings section
@@ -47,11 +49,13 @@ const productSchema = new Schema(
             min: 50,
         },
         appliedDiscount: {
+            //# Number section
             amount: {
                 type: Number,
                 min: 0,
                 default: 0,
             },
+            //# String section
             type: {
                 type: String,
                 enum: Object.values(DiscountType),

@@ -1,3 +1,4 @@
+//# dependencies
 import mongoose from "mongoose";
 
 const connectionDB = async () => {

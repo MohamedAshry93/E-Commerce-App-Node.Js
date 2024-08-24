@@ -1,12 +1,17 @@
+//# dependencies
 import { Router } from "express";
+
+//# controllers
 import * as productController from "./product.controller.js";
+
+//# schemas
 import * as productSchema from "./product.schema.js";
 
 //# middlewares
 import * as middleware from "../../Middlewares/index.js";
 
 //# utils
-import { extensions, systemRoles } from "../../Utils/index.js";
+import { extensions, SystemRoles } from "../../Utils/index.js";
 
 //# models
 import { Brand } from "../../../database/Models/index.js";
@@ -18,7 +23,7 @@ productRouter.post(
     "/create",
     middleware.errorHandling(middleware.authenticationMiddleware()),
     middleware.errorHandling(
-        middleware.authorizationMiddleware(systemRoles.COMPANY_ADMIN)
+        middleware.authorizationMiddleware(SystemRoles.COMPANY_ADMIN)
     ),
     middleware.errorHandling(
         middleware
@@ -37,7 +42,7 @@ productRouter.put(
     "/update/:productId",
     middleware.errorHandling(middleware.authenticationMiddleware()),
     middleware.errorHandling(
-        middleware.authorizationMiddleware(systemRoles.COMPANY_ADMIN)
+        middleware.authorizationMiddleware(SystemRoles.COMPANY_ADMIN)
     ),
     middleware.errorHandling(
         middleware
@@ -56,7 +61,7 @@ productRouter.delete(
     "/delete/:productId",
     middleware.errorHandling(middleware.authenticationMiddleware()),
     middleware.errorHandling(
-        middleware.authorizationMiddleware(systemRoles.COMPANY_ADMIN)
+        middleware.authorizationMiddleware(SystemRoles.COMPANY_ADMIN)
     ),
     middleware.errorHandling(
         middleware.validationMiddleware(productSchema.deleteProductSchema)

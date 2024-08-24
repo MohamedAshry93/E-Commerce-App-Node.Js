@@ -1,3 +1,4 @@
+//# dependencies
 import { nanoid } from "nanoid";
 import slugify from "slugify";
 
@@ -102,17 +103,21 @@ const createProduct = async (req, res, next) => {
         );
     }
     //? update brand (add product id to its brand)
-    await Brand.findByIdAndUpdate(brandDocument._id, {
-        $push: { products: newProduct._id },
-    });
-    //? check if new product id added to products array or not
-    if (brandDocument.products.includes(newProduct._id)) {
+    const updatedBrand = await Brand.findByIdAndUpdate(
+        brandDocument._id,
+        {
+            $push: { products: newProduct._id },
+        },
+        { new: true }
+    );
+    //? check if new product id added to products array in brand or not
+    if (!updatedBrand.products.includes(newProduct._id)) {
         return next(
             new ErrorHandlerClass(
                 "Product id not added to products array in brand",
                 400,
                 "Error in createProduct API",
-                "at Product controller",
+                "at Product controller"
             )
         );
     }
@@ -157,60 +162,60 @@ const getProduct = async (req, res, next) => {
 //! ================================ Get All Products with pagination ================================ //
 const getAllProducts = async (req, res, next) => {
     /*
-    //? destruct data from req.query
-        const {
-            page = 1,
-            limit = 5,
-            sort,
-            ...filters
-        } = req.query;
-        const skip = (page - 1) * limit;
-    //? destruct price, appliedPrice, stock, categoryId, subCategoryId, brandId, rating from filters
-        const filtersAsString = JSON.stringify(filters);
-        const replacedFilters = filtersAsString.replaceAll(
-            /lt|gt|lte|gte|eq|ne|regex/g,
-            (ele) => `$${ele}`
-        );
-        const parsedFilters = JSON.parse(replacedFilters);
-    */
+            //? destruct data from req.query
+                const {
+                    page = 1,
+                    limit = 5,
+                    sort,
+                    ...filters
+                } = req.query;
+                const skip = (page - 1) * limit;
+            //? destruct price, appliedPrice, stock, categoryId, subCategoryId, brandId, rating from filters
+                const filtersAsString = JSON.stringify(filters);
+                const replacedFilters = filtersAsString.replaceAll(
+                    /lt|gt|lte|gte|eq|ne|regex/g,
+                    (ele) => `$${ele}`
+                );
+                const parsedFilters = JSON.parse(replacedFilters);
+            */
 
     /*
-    /// => way No.1 using find, limit and skip method ///
-    //? find all products with pagination
-        const products = await Product.find(parsedFilters)
-            .limit(limit)
-            .skip(skip)
-            .populate([{ path: "brandId" }, { path: "categoryId" }, { path: "subCategoryId" }])
-            .sort(sort);
-    //? count total number of documents
-        const count = await Product.countDocuments();
-    //? send response
-        res.status(200).json({
-            status: "success",
-            message: "Products found successfully",
-            productsData: products,
-            totalPages: Math.ceil(count / limit),
-            currentPage: page,
-        });
-    */
+            /// => way No.1 using find, limit and skip method ///
+            //? find all products with pagination
+                const products = await Product.find(parsedFilters)
+                    .limit(limit)
+                    .skip(skip)
+                    .populate([{ path: "brandId" }, { path: "categoryId" }, { path: "subCategoryId" }])
+                    .sort(sort);
+            //? count total number of documents
+                const count = await Product.countDocuments();
+            //? send response
+                res.status(200).json({
+                    status: "success",
+                    message: "Products found successfully",
+                    productsData: products,
+                    totalPages: Math.ceil(count / limit),
+                    currentPage: page,
+                });
+            */
 
     /*
-    /// => way No.2 using using paginate method from mongoose-paginate-v2 as schema plugin ///
-    //? find all products with pagination
-        const products = await Product.paginate(parsedFilters, {
-            page,
-            limit,
-            skip,
-            sort,
-            populate: ["brandId", "categoryId", "subCategoryId"],
-        });
-    //? send response
-        res.status(200).json({
-            status: "success",
-            message: "Products found successfully",
-            productsData: products,
-        });
-    */
+            /// => way No.2 using using paginate method from mongoose-paginate-v2 as schema plugin ///
+            //? find all products with pagination
+                const products = await Product.paginate(parsedFilters, {
+                    page,
+                    limit,
+                    skip,
+                    sort,
+                    populate: ["brandId", "categoryId", "subCategoryId"],
+                });
+            //? send response
+                res.status(200).json({
+                    status: "success",
+                    message: "Products found successfully",
+                    productsData: products,
+                });
+            */
 
     /// => way No.3 using api features ///
     //? destruct data from req.query
@@ -353,7 +358,7 @@ const updateProduct = async (req, res, next) => {
                 "at Product controller",
                 { product }
             )
-        )
+        );
     }
     //? return response
     res.status(200).json({
@@ -391,14 +396,30 @@ const deleteProduct = async (req, res, next) => {
     //? delete folder from cloudinary
     await cloudinaryConfig().api.delete_folder(productPath);
     //? update brand (delete product id from its brand)
-    await Brand.findByIdAndUpdate(deletedProduct.brandId._id, {
-        $pull: { products: deletedProduct._id },
-    });
+    const updatedBrand = await Brand.findByIdAndUpdate(
+        deletedProduct.brandId._id,
+        {
+            $pull: { products: deletedProduct._id },
+        },
+        { new: true }
+    );
+    //? check if product id deleted from products array in brand or not
+    if (updatedBrand.products.includes({ _id: productId })) {
+        return next(
+            new ErrorHandlerClass(
+                "Product id not deleted from products array in brand",
+                400,
+                "Error in deleteProduct API",
+                "at Product controller",
+                { updatedBrand }
+            )
+        );
+    }
     //? return response
     res.status(200).json({
         status: "success",
         message: "Product deleted successfully",
-        data: deletedProduct,
+        data: deletedProduct._id,
     });
 };
 

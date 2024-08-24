@@ -2,7 +2,7 @@
 import { ErrorHandlerClass } from "../Utils/index.js";
 
 //# models
-import { User } from "../../database/Models/index.js";
+import { Coupon, Product, User } from "../../database/Models/index.js";
 
 //! ===================================== Check Model by Name ===================================== //
 const modelNameExist = (model) => {
@@ -86,4 +86,39 @@ const checkUserDataExist = () => {
     };
 };
 
-export { modelNameExist, checkIdsExist, checkUserDataExist };
+//! ===================================== Check Product Availability ===================================== //
+const checkProductStock = async (productId, quantity) => {
+    return await Product.findOne({ _id: productId, stock: { $gte: quantity } });
+};
+
+//! ===================================== Check Coupon Code ===================================== //
+const checkCouponCodeExist = () => {
+    return async (req, res, next) => {
+        //? destruct data from req.body
+        const { couponCode } = req.body;
+        if (couponCode) {
+            //? check if couponCode exists in database
+            const coupon = await Coupon.findOne({ couponCode });
+            if (coupon) {
+                return next(
+                    new ErrorHandlerClass(
+                        "coupon code already exist",
+                        400,
+                        "Error in checkCouponCodeExist API",
+                        "at checkData middleware",
+                        { couponCode }
+                    )
+                );
+            }
+        }
+        next();
+    };
+};
+
+export {
+    modelNameExist,
+    checkIdsExist,
+    checkUserDataExist,
+    checkProductStock,
+    checkCouponCodeExist,
+};

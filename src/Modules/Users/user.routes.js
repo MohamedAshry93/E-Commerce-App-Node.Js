@@ -1,9 +1,10 @@
+//# dependencies
 import { Router } from "express";
 
-//# controller
+//# controllers
 import * as userController from "./user.controller.js";
 
-//# schema
+//# schemas
 import * as userSchema from "./user.schema.js";
 
 //# middlewares

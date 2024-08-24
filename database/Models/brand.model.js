@@ -3,6 +3,7 @@ import mongoose from "../global-setup.js";
 
 const { Schema, model } = mongoose;
 
+//# create brand schema
 const brandSchema = new Schema(
     {
         //# Strings section

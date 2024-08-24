@@ -1,10 +1,11 @@
+//# dependencies
 import { hashSync } from "bcrypt";
 
 //# global setup
 import mongoose from "../global-setup.js";
 
 //# utils
-import { Gender, systemRoles } from "../../src/Utils/index.js";
+import { Gender, SystemRoles } from "../../src/Utils/index.js";
 
 const { Schema, model } = mongoose;
 
@@ -35,7 +36,7 @@ const userSchema = new Schema(
         userType: {
             type: String,
             required: [true, "you must choose your role"],
-            enum: Object.values(systemRoles),
+            enum: Object.values(SystemRoles),
         },
         gender: {
             type: String,

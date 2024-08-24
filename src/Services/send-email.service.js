@@ -1,3 +1,4 @@
+//# dependencies
 import nodemailer from "nodemailer";
 
 const sendEmailService = async ({

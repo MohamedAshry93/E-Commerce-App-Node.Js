@@ -3,6 +3,7 @@ import mongoose from "../global-setup.js";
 
 const { Schema, model } = mongoose;
 
+//# create subCategory schema
 const subCategorySchema = new Schema(
     {
         //# Strings section

@@ -3,13 +3,16 @@ import mongoose from "../global-setup.js";
 
 const { Schema, model } = mongoose;
 
+//# create address schema
 const addressSchema = new Schema(
     {
+        //# ObjectIds section
         userId: {
             type: Schema.Types.ObjectId,
             ref: "User",
             required: true,
         },
+        //# Strings section
         country: {
             type: String,
             required: [true, "country is required"],
@@ -18,6 +21,8 @@ const addressSchema = new Schema(
             type: String,
             required: [true, "city is required"],
         },
+        addressLabel: String,
+        //# Numbers section
         postalCode: {
             type: Number,
             required: [true, "postalCode is required"],
@@ -30,7 +35,7 @@ const addressSchema = new Schema(
             type: Number,
             required: [true, "floorNumber is required"],
         },
-        addressLabel: String,
+        //# Booleans section
         isDefault: {
             type: Boolean,
             default: false,
@@ -39,6 +44,7 @@ const addressSchema = new Schema(
             type: Boolean,
             default: false,
         },
+        //# Dates section
         deletedAt: Date,
     },
     { timestamps: true, versionKey: "version_key" }

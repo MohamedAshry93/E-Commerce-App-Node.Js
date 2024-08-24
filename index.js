@@ -1,3 +1,4 @@
+//# dependencies
 import { config } from "dotenv";
 import express from "express";
 import path from "path";
@@ -9,7 +10,7 @@ import connectionDB from "./database/connection.js";
 import * as routers from "./src/Modules/index.js";
 
 //# utils
-import { ErrorHandlerClass } from "./src/Utils/index.js";
+import { deleteAddressesCron, disableCouponsCron, ErrorHandlerClass } from "./src/Utils/index.js";
 
 //# middlewares
 import { globalResponse } from "./src/Middlewares/index.js";
@@ -43,6 +44,8 @@ app.use("/carts", routers.cartRouter);
 app.use("/addresses", routers.addressRouter);
 
 connectionDB();
+disableCouponsCron();
+deleteAddressesCron();
 
 //# global error handling middleware
 app.use("*", (req, res, next) =>

@@ -1,16 +1,17 @@
+//# dependencies
 import { Router } from "express";
 
-//# controller
+//# controllers
 import * as subCategoryController from "./sub-category.controller.js";
 
-//# schema
+//# schemas
 import * as subCategorySchema from "./sub-category.schema.js";
 
 //# middlewares
 import * as middleware from "../../Middlewares/index.js";
 
 //# utils
-import { extensions, systemRoles } from "../../Utils/index.js";
+import { extensions, SystemRoles } from "../../Utils/index.js";
 
 //# models
 import { SubCategory } from "./../../../database/Models/index.js";
@@ -22,7 +23,7 @@ subCategoryRouter.post(
     "/create",
     middleware.errorHandling(middleware.authenticationMiddleware()),
     middleware.errorHandling(
-        middleware.authorizationMiddleware(systemRoles.COMPANY_ADMIN)
+        middleware.authorizationMiddleware(SystemRoles.COMPANY_ADMIN)
     ),
     middleware.errorHandling(
         middleware
@@ -56,7 +57,7 @@ subCategoryRouter.put(
     "/update/:_id",
     middleware.errorHandling(middleware.authenticationMiddleware()),
     middleware.errorHandling(
-        middleware.authorizationMiddleware(systemRoles.COMPANY_ADMIN)
+        middleware.authorizationMiddleware(SystemRoles.COMPANY_ADMIN)
     ),
     middleware.errorHandling(
         middleware
@@ -75,7 +76,7 @@ subCategoryRouter.delete(
     "/delete/:_id",
     middleware.errorHandling(middleware.authenticationMiddleware()),
     middleware.errorHandling(
-        middleware.authorizationMiddleware(systemRoles.COMPANY_ADMIN)
+        middleware.authorizationMiddleware(SystemRoles.COMPANY_ADMIN)
     ),
     middleware.errorHandling(
         middleware.validationMiddleware(subCategorySchema.deleteSubCategorySchema)

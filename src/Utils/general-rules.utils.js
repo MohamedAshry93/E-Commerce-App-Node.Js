@@ -1,8 +1,14 @@
+//# dependencies
 import Joi from "joi";
 import { Types } from "mongoose";
 
 //# utils
-import { Badges, DiscountType, Gender, systemRoles } from "./enums.utils.js";
+import {
+    Badges,
+    DiscountType,
+    Gender,
+    SystemRoles,
+} from "./enums.utils.js";
 
 //? general object rule
 const objectIdRule = (value, helper) => {
@@ -106,14 +112,17 @@ const generalRule = {
             "any.required": "phone is required",
             "string.pattern.base": "phone must be a valid Egyptian phone number",
         }),
-    gender: Joi.string().optional().valid(Gender.MALE, Gender.FEMALE).messages({
-        "string.base": "gender must be a string",
-        "string.empty": "Invalid gender it cannot be an empty string",
-        "any.only": "gender must be either Male or Female",
-    }),
+    gender: Joi.string()
+        .valid(...Object.values(Gender))
+        .optional()
+        .messages({
+            "string.base": "gender must be a string",
+            "string.empty": "Invalid gender it cannot be an empty string",
+            "any.only": "gender must be either Male or Female",
+        }),
     userType: Joi.string()
+        .valid(...Object.values(SystemRoles))
         .required()
-        .valid(systemRoles.USER, systemRoles.COMPANY_ADMIN)
         .messages({
             "string.base": "userType must be a string",
             "string.empty": "Invalid userType it cannot be an empty string",
@@ -148,8 +157,8 @@ const generalRule = {
             "object.pattern.base": "specs must be a object of strings",
         }),
     badge: Joi.string()
+        .valid(...Object.values(Badges))
         .optional()
-        .valid(Badges.BEST_SELLER, Badges.NEW, Badges.SALE)
         .messages({
             "string.base": "badge must be a string",
             "string.empty": "Invalid badge it cannot be an empty string",
@@ -161,18 +170,27 @@ const generalRule = {
         "any.required": "price is required",
         "number.min": "price must be at least 50",
     }),
-    discountAmount: Joi.number().min(0).optional().messages({
-        "number.base": "amount must be a number",
-        "number.empty": "Invalid amount it cannot be an empty number",
-        "number.min": "amount must be at least 0",
-    }),
     discountType: Joi.string()
+        .valid(...Object.values(DiscountType))
         .optional()
-        .valid(DiscountType.PERCENTAGE, DiscountType.FIXED)
         .messages({
             "string.base": "type must be a string",
             "string.empty": "Invalid type it cannot be an empty string",
-            "any.only": "type must be either PERCENTAGE or FIXED",
+            "any.only": "type must be either PERCENTAGE or AMOUNT",
+        }),
+    discountAmount: Joi.number()
+        .positive()
+        .when("discountType", {
+            is: Joi.string().valid(DiscountType.PERCENTAGE),
+            then: Joi.number().min(0).max(100).required(),
+            otherwise: Joi.number().min(0).required(),
+        })
+        .optional()
+        .messages({
+            "number.base": "discountAmount must be a number",
+            "number.empty": "Invalid discountAmount it cannot be an empty number",
+            "number.min": "discountAmount must be at least 0",
+            "number.max": "discountAmount must be less than or equal 100",
         }),
     stock: Joi.number().integer().positive().min(1).required().messages({
         "number.base": "stock must be a number",
@@ -233,6 +251,73 @@ const generalRule = {
         "string.base": "old_public_id must be a string",
         "string.empty": "old_public_id cannot be empty",
     }),
+    quantity: Joi.number().integer().positive().min(1).required().messages({
+        "number.base": "quantity must be a number",
+        "number.empty": "Invalid quantity it cannot be an empty number",
+        "any.required": "quantity is required",
+        "number.integer": "quantity must be an integer",
+        "number.min": "quantity must be at least 1",
+    }),
+    couponCode: Joi.string().required().messages({
+        "string.base": "couponCode must be a string",
+        "string.empty": "Invalid couponCode it cannot be an empty string",
+        "any.required": "couponCode is required",
+    }),
+    couponType: Joi.string()
+        .valid(...Object.values(DiscountType))
+        .required()
+        .messages({
+            "string.base": "couponType must be a string",
+            "string.empty": "Invalid couponType it cannot be an empty string",
+            "any.required": "couponType is required",
+            "any.only": "couponType must be either PERCENTAGE or AMOUNT",
+        }),
+    couponAmount: Joi.number()
+        .when("couponType", {
+            is: Joi.string().valid(DiscountType.PERCENTAGE),
+            then: Joi.number().min(1).max(100),
+            otherwise: Joi.number().min(1),
+        })
+        .required()
+        .messages({
+            "number.base": "couponAmount must be a number",
+            "number.empty": "Invalid couponAmount it cannot be an empty number",
+            "any.required": "couponAmount is required",
+            "number.min": "couponAmount must be at least 1",
+            "number.max": "couponAmount must be less than or equal 100",
+        }),
+    from: Joi.date().greater(Date.now()).required().messages({
+        "date.base": "from must be a date",
+        "date.empty": "Invalid from it cannot be an empty date",
+        "any.required": "from is required",
+        "date.greater": "from must be greater than today",
+    }),
+    till: Joi.date().greater(Joi.ref("from")).required().messages({
+        "date.base": "till must be a date",
+        "date.empty": "Invalid till it cannot be an empty date",
+        "any.required": "till is required",
+        "date.greater": "till must be greater than from",
+    }),
+    maxCount: Joi.number().integer().min(1).positive().required().messages({
+        "number.base": "maxCount must be a number",
+        "number.empty": "Invalid maxCount it cannot be an empty number",
+        "any.required": "maxCount is required",
+        "number.integer": "maxCount must be an integer",
+        "number.min": "maxCount must be at least 1",
+    }),
+    numberOfUsage: Joi.number().integer().min(0).optional().messages({
+        "number.base": "numberOfUsage must be a number",
+        "number.empty": "Invalid numberOfUsage it cannot be an empty number",
+        "number.integer": "numberOfUsage must be an integer",
+        "number.min": "numberOfUsage must be at least 0",
+    }),
+    isEnable: Joi.boolean().valid(true, false).required().messages({
+        "any.only": "isEnable must be a boolean value (true or false)",
+        "boolean.base": "isEnable must be a boolean value (true or false)",
+        "boolean.valid": "isEnable must be a boolean value (true or false)",
+        "boolean.empty": "Invalid isEnable it cannot be an empty boolean",
+        "any.required": "isEnable is required",
+    })
 };
 
 export { generalRule };

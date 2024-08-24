@@ -1,5 +1,5 @@
-import { ErrorHandlerClass } from "../Utils/error-class.utils.js";
-
+//# utils
+import { ErrorHandlerClass } from "../Utils/index.js";
 
 const reqKeys = ["body", "params", "query", "headers"];
 

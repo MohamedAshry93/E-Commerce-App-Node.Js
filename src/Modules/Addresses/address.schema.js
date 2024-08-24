@@ -1,3 +1,4 @@
+//# dependencies
 import Joi from "joi";
 
 //# utils
@@ -13,9 +14,10 @@ const addAddressSchema = {
         floorNumber: generalRule.floorNumber,
         addressLabel: generalRule.addressLabel,
         setAsDefault: Joi.boolean().valid(true, false).optional().messages({
-            "any.only": "setAsDefault must be either true or false",
+            "any.only": "setAsDefault must be a boolean value (true or false)",
             "boolean.base": "setAsDefault must be a boolean",
             "boolean.empty": "Invalid setAsDefault it cannot be an empty boolean",
+            "boolean.valid": "setAsDefault must be a boolean value (true or false)",
         }),
     }),
 };
@@ -30,9 +32,10 @@ const editAddressSchema = {
         floorNumber: generalRule.floorNumber.optional(),
         addressLabel: generalRule.addressLabel.optional(),
         setAsDefault: Joi.boolean().valid(true, false).optional().messages({
-            "any.only": "setAsDefault must be either true or false",
+            "any.only": "setAsDefault must be a boolean value (true or false)",
             "boolean.base": "setAsDefault must be a boolean",
             "boolean.empty": "Invalid setAsDefault it cannot be an empty boolean",
+            "boolean.valid": "setAsDefault must be a boolean value (true or false)",
         }),
     }),
     params: Joi.object({

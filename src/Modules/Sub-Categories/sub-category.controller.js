@@ -1,3 +1,4 @@
+//# dependencies
 import { nanoid } from "nanoid";
 import slugify from "slugify";
 
@@ -253,9 +254,25 @@ const deleteSubCategory = async (req, res, next) => {
     //? delete relevant products from database
     await Product.deleteMany({ subCategoryId: deletedSubCategory._id });
     //? update category (delete sub-category id from category)
-    await Category.findByIdAndUpdate(deletedSubCategory.categoryId._id, {
-        $pull: { subCategories: deletedSubCategory._id },
-    });
+    const updatedCategory = await Category.findByIdAndUpdate(
+        deletedSubCategory.categoryId._id,
+        {
+            $pull: { subCategories: deletedSubCategory._id },
+        },
+        { new: true }
+    );
+    //? check if subCategory id deleted from subCategories array in category or not
+    if (updatedCategory.subCategories.includes(_id)) {
+        return next(
+            new ErrorHandlerClass(
+                "Sub-Category id not deleted from subCategories array in category",
+                400,
+                "Error in deleteSubCategory API",
+                "at SubCategory controller",
+                { updatedCategory }
+            )
+        );
+    }
     //? return response
     res.status(200).json({
         status: "success",
@@ -270,49 +287,49 @@ const deleteSubCategory = async (req, res, next) => {
 //! =========================== Get all subCategories paginated with their brands =========================== //
 const getAllSubCategories = async (req, res, next) => {
     /*
-        //? destruct data from req.query
-          const { page = 1, limit = 5 } = req.query;
-          const skip = (page - 1) * limit;
-      */
+            //? destruct data from req.query
+              const { page = 1, limit = 5 } = req.query;
+              const skip = (page - 1) * limit;
+          */
 
     /*
-      /// => way No.1 using find, limit and skip method ///
-        //? find all subCategories paginated with their brands
-      const subCategories = await SubCategory.find()
-          .populate("brands")
-          .limit(limit)
-          .skip(skip);
-        //? count total number of pages
-          const count = await SubCategory.countDocuments();
-        //? return response
-          res.status(200).json({
-              status: "success",
-              message: "Sub-Categories found successfully",
-              subCategoriesData: subCategories,
-              totalPages: Math.ceil(count / limit),
-              currentPage: page,
-          });
-      */
+          /// => way No.1 using find, limit and skip method ///
+            //? find all subCategories paginated with their brands
+          const subCategories = await SubCategory.find()
+              .populate("brands")
+              .limit(limit)
+              .skip(skip);
+            //? count total number of pages
+              const count = await SubCategory.countDocuments();
+            //? return response
+              res.status(200).json({
+                  status: "success",
+                  message: "Sub-Categories found successfully",
+                  subCategoriesData: subCategories,
+                  totalPages: Math.ceil(count / limit),
+                  currentPage: page,
+              });
+          */
 
     /*
-      /// => way No.2 using using paginate method from mongoose-paginate-v2 as schema plugin ///
-        //? find all subCategories paginated with their brands
-          const subCategories = await SubCategory.paginate(
-              {},
-              {
-                  populate: "brands",
-                  limit,
-                  page,
-                  skip,
-              }
-          );
-        //? return response
-          res.status(200).json({
-              status: "success",
-              message: "Sub-Categories found successfully",
-              subCategoriesData: subCategories,
-          });
-      */
+          /// => way No.2 using using paginate method from mongoose-paginate-v2 as schema plugin ///
+            //? find all subCategories paginated with their brands
+              const subCategories = await SubCategory.paginate(
+                  {},
+                  {
+                      populate: "brands",
+                      limit,
+                      page,
+                      skip,
+                  }
+              );
+            //? return response
+              res.status(200).json({
+                  status: "success",
+                  message: "Sub-Categories found successfully",
+                  subCategoriesData: subCategories,
+              });
+          */
 
     /// => way No.3 using api features ///
     //? destruct data from req.query

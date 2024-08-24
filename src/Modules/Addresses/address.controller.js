@@ -1,4 +1,6 @@
+//# dependencies
 import axios from "axios";
+import { DateTime } from "luxon";
 
 //# utils
 import { ErrorHandlerClass } from "../../Utils/index.js";
@@ -243,7 +245,7 @@ const removeAddress = async (req, res, next) => {
     //? update is default to false
     address.isDefault = false;
     //? update deletedAt after 30 days
-    address.deletedAt = Date.now() + 2592000000;
+    address.deletedAt = DateTime.now() + 2592000000;
     //? save address
     const savedAddress = await address.save();
     //? check if address saved in DB or not
@@ -281,7 +283,7 @@ const recoverAddress = async (req, res, next) => {
         _id: addressId,
         userId,
         isMarkedAsDeleted: true,
-        deletedAt: { $gt: Date.now() },
+        deletedAt: { $gt: DateTime.now() },
     });
     if (!address) {
         return next(

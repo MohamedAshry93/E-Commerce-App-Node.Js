@@ -6,12 +6,16 @@ const Badges = {
 
 const DiscountType = {
     PERCENTAGE: "Percentage",
-    FIXED: "Fixed",
+    AMOUNT: "Amount",
 };
 
-const systemRoles = {
+const SystemRoles = {
     COMPANY_ADMIN: "Company_ADMIN",
     USER: "User",
+};
+
+const CouponRoles = {
+    COUPON_ROLES_USER_ADMIN: [SystemRoles.COMPANY_ADMIN, SystemRoles.USER],
 };
 
 const Gender = {
@@ -19,4 +23,4 @@ const Gender = {
     FEMALE: "Female",
 };
 
-export { Badges, DiscountType, systemRoles, Gender };
+export { Badges, DiscountType, SystemRoles, Gender, CouponRoles };

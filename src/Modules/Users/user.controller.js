@@ -1,3 +1,4 @@
+//# dependencies
 import jwt from "jsonwebtoken";
 import { compareSync, hashSync } from "bcrypt";
 import axios from "axios";
@@ -13,6 +14,7 @@ import {
     Address,
     Brand,
     Category,
+    Coupon,
     Product,
     SubCategory,
     User,
@@ -46,7 +48,6 @@ const signUp = async (req, res, next) => {
         userName,
         email,
         password,
-        // confirmPassword,
         userType,
         age,
         gender,
@@ -109,8 +110,8 @@ const signUp = async (req, res, next) => {
             new ErrorHandlerClass(
                 "Verification sending email is failed, please try again",
                 400,
-                "at checking isEmailSent in signUp API",
                 "Error in user controller",
+                "at checking isEmailSent in signUp API",
                 { email }
             )
         );
@@ -123,8 +124,8 @@ const signUp = async (req, res, next) => {
             new ErrorHandlerClass(
                 "User registration is failed, please try again",
                 400,
-                "at checking user added or not in signUp API",
                 "Error in user controller",
+                "at checking user added or not in signUp API",
                 { userInstance }
             )
         );
@@ -137,8 +138,8 @@ const signUp = async (req, res, next) => {
             new ErrorHandlerClass(
                 "User registration is failed, please try again",
                 400,
-                "at checking address added or not in signUp API",
                 "Error in user controller",
+                "at checking address added or not in signUp API",
                 { addressInstance }
             )
         );
@@ -161,6 +162,9 @@ const signUp = async (req, res, next) => {
     });
 };
 
+/*
+@api {GET} /users/verify-email/:token (verify an email)
+*/
 //! ============================================= Verify email ============================================= //
 const verifyEmail = async (req, res, next) => {
     //? destruct token
@@ -173,8 +177,8 @@ const verifyEmail = async (req, res, next) => {
             new ErrorHandlerClass(
                 "Invalid token payload",
                 401,
-                "at verify decodedData in verifyEmail API",
                 "Error in user controller",
+                "at verify decodedData in verifyEmail API",
                 { token }
             )
         );
@@ -194,8 +198,8 @@ const verifyEmail = async (req, res, next) => {
             new ErrorHandlerClass(
                 "Invalid verification link",
                 404,
-                "at checking confirmedUser in verifyEmail API",
                 "Error in user controller",
+                "at checking confirmedUser in verifyEmail API",
                 { token }
             )
         );
@@ -208,6 +212,9 @@ const verifyEmail = async (req, res, next) => {
     });
 };
 
+/*
+@api {POST} /users/login (user signIn)
+*/
 //! ============================================= Login ============================================= //
 const signIn = async (req, res, next) => {
     //? destruct data from req.body
@@ -219,8 +226,8 @@ const signIn = async (req, res, next) => {
             new ErrorHandlerClass(
                 "Invalid Login credentials",
                 404,
-                "at signIn API",
-                "Error in user controller"
+                "Error in user controller",
+                "at signIn API"
             )
         );
     }
@@ -230,8 +237,8 @@ const signIn = async (req, res, next) => {
             new ErrorHandlerClass(
                 "Invalid Login credentials",
                 401,
-                "at signIn API",
-                "Error in user controller"
+                "Error in user controller",
+                "at signIn API"
             )
         );
     }
@@ -255,6 +262,9 @@ const signIn = async (req, res, next) => {
     });
 };
 
+/*
+@api {POST} /users/logout (user signOut)
+*/
 //! ============================================= Log Out ============================================= //
 const signOut = async (req, res, next) => {
     //? destruct data from req.authUser
@@ -273,6 +283,9 @@ const signOut = async (req, res, next) => {
     });
 };
 
+/*
+@api {PUT} /users/update-profile (update profile)
+*/
 //! ================================= Update account by his user ================================= //
 const updatedAccount = async (req, res, next) => {
     //? destruct data from req.authUser
@@ -286,8 +299,8 @@ const updatedAccount = async (req, res, next) => {
             new ErrorHandlerClass(
                 "User not found you must login",
                 404,
-                "at checking user in updatedAccount API",
-                "Error in user controller"
+                "Error in user controller",
+                "at checking user in updatedAccount API"
             )
         );
     }
@@ -328,8 +341,8 @@ const updatedAccount = async (req, res, next) => {
                 new ErrorHandlerClass(
                     "Verification sending email is failed, please try again",
                     400,
-                    "at checking isEmailSent in updatedAccount API",
                     "Error in user controller",
+                    "at checking isEmailSent in updatedAccount API",
                     { email }
                 )
             );
@@ -344,8 +357,8 @@ const updatedAccount = async (req, res, next) => {
             new ErrorHandlerClass(
                 "User updated is failed, please try again",
                 400,
-                "at checking user updated or not in updatedAccount API",
                 "Error in user controller",
+                "at checking user updated or not in updatedAccount API",
                 { user }
             )
         );
@@ -366,6 +379,9 @@ const updatedAccount = async (req, res, next) => {
     });
 };
 
+/*
+@api {DELETE} /users/delete-account (delete account)
+*/
 //! ==================================== Delete account by his user ==================================== //
 const deletedAccount = async (req, res, next) => {
     //? destruct data from req.authUser
@@ -380,6 +396,7 @@ const deletedAccount = async (req, res, next) => {
         await Product.deleteMany({ createdBy: _id });
         await User.findByIdAndDelete({ _id });
         await Address.deleteMany({ userId: _id });
+        await Coupon.deleteMany({ createdBy: _id });
     }
     if (user.userType == "User") {
         await User.findByIdAndDelete({ _id });
@@ -401,6 +418,9 @@ const deletedAccount = async (req, res, next) => {
     });
 };
 
+/*
+@api {GET} /users/user-data (get account data)
+*/
 //! ================================= Get account data for loggedIn user ================================ //
 const getAccountData = async (req, res, next) => {
     //? destruct data from req.authUser
@@ -412,8 +432,8 @@ const getAccountData = async (req, res, next) => {
             new ErrorHandlerClass(
                 "User not found you must login",
                 404,
-                "at checking user in getAccountData API",
-                "Error in user controller"
+                "Error in user controller",
+                "at checking user in getAccountData API"
             )
         );
     }
@@ -434,6 +454,9 @@ const getAccountData = async (req, res, next) => {
     });
 };
 
+/*
+@api {PUT} /users/update-password (update password)
+*/
 //! ========================================= Update password ========================================= //
 const updatedPassword = async (req, res, next) => {
     //? destruct data from req.authUser
@@ -447,8 +470,8 @@ const updatedPassword = async (req, res, next) => {
             new ErrorHandlerClass(
                 "User not found you must login",
                 404,
-                "at checking user in updatedPassword API",
-                "Error in user controller"
+                "Error in user controller",
+                "at checking user in updatedPassword API"
             )
         );
     }
@@ -458,14 +481,13 @@ const updatedPassword = async (req, res, next) => {
             new ErrorHandlerClass(
                 "Old password is not correct",
                 400,
-                "at checking old password in updatedPassword API",
-                "Error in user controller"
+                "Error in user controller",
+                "at checking old password in updatedPassword API"
             )
         );
     }
     //? check if password and confirmPassword are updated
     if (password) user.password = password;
-    // if (confirmPassword) user.confirmPassword = confirmPassword;
     user.version_key += 1;
     //? update user
     const updatedUser = await user.save();
@@ -475,8 +497,8 @@ const updatedPassword = async (req, res, next) => {
             new ErrorHandlerClass(
                 "User updated is failed, please try again",
                 400,
-                "at checking user updated or not in updatedPassword API",
-                "Error in user controller"
+                "Error in user controller",
+                "at checking user updated or not in updatedPassword API"
             )
         );
     }
@@ -491,6 +513,9 @@ const updatedPassword = async (req, res, next) => {
     });
 };
 
+/*
+@api {POST} /users/forget-password (forget password)
+*/
 //! ========================================= Forget password ========================================= //
 const forgetPassword = async (req, res, next) => {
     //? destruct data from req.body
@@ -502,8 +527,8 @@ const forgetPassword = async (req, res, next) => {
             new ErrorHandlerClass(
                 "User not found",
                 404,
-                "at searching for user in forgetPassword API",
                 "Error in user controller",
+                "at searching for user in forgetPassword API",
                 { email }
             )
         );
@@ -528,8 +553,8 @@ const forgetPassword = async (req, res, next) => {
             new ErrorHandlerClass(
                 "Verification sending email is failed, please try again",
                 400,
-                "at checking isEmailSent",
                 "Error in forget password controller",
+                "at checking isEmailSent",
                 { email }
             )
         );
@@ -547,8 +572,8 @@ const forgetPassword = async (req, res, next) => {
             new ErrorHandlerClass(
                 "Data updated is failed, please try again",
                 400,
-                "at checking data updated or not in forgetPassword API",
                 "Error in user controller",
+                "at checking data updated or not in forgetPassword API",
                 { user }
             )
         );
@@ -561,6 +586,9 @@ const forgetPassword = async (req, res, next) => {
     });
 };
 
+/*
+@api {POST} /users/reset-password (reset password)
+*/
 //! ========================================= Reset password ========================================= //
 const resetPassword = async (req, res, next) => {
     //? destruct data from req.body
@@ -575,8 +603,8 @@ const resetPassword = async (req, res, next) => {
             new ErrorHandlerClass(
                 "User not found",
                 404,
-                "at searching for user",
                 "Error in resetPassword controller",
+                "at searching for user",
                 { email }
             )
         );
@@ -587,8 +615,8 @@ const resetPassword = async (req, res, next) => {
             new ErrorHandlerClass(
                 "Invalid OTP",
                 400,
-                "at checking otp",
                 "Error in resetPassword controller",
+                "at checking otp",
                 { otp }
             )
         );
@@ -610,8 +638,8 @@ const resetPassword = async (req, res, next) => {
             new ErrorHandlerClass(
                 "User updated is failed, please try again",
                 400,
-                "at checking user updated or not in resetPassword API",
                 "Error in user controller",
+                "at checking user updated or not in resetPassword API",
                 { user }
             )
         );
