@@ -61,7 +61,7 @@ const addAddress = async (req, res, next) => {
     //? check if address is default
     if (setAsDefault) {
         //? update all default addresses
-        await Address.updateOne(
+        await Address.updateMany(
             { userId, isDefault: true },
             { $set: { isDefault: false } }
         );

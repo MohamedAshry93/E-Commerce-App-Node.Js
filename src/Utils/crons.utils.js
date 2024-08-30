@@ -3,7 +3,12 @@ import { scheduleJob } from "node-schedule";
 import { DateTime } from "luxon";
 
 //# models
-import { Address, Coupon } from "./../../database/Models/index.js";
+import {
+    Address,
+    Coupon,
+    Product,
+    Review,
+} from "./../../database/Models/index.js";
 
 //! ===================================== Disable Coupons Cron ===================================== //
 const disableCouponsCron = () => {
@@ -53,4 +58,34 @@ const deleteAddressesCron = () => {
     });
 };
 
-export { disableCouponsCron, deleteAddressesCron };
+//! ========================== Calculate the average rating for product Cron =========================== //
+const calculateProductRatingCron = () => {
+    scheduleJob("0 59 23 * * *", async () => {
+        console.log(
+            "cron job to calculate the average rating for product calculateProductRatingCron()"
+        );
+        //? get all products
+        const products = await Product.find().sort({ createdAt: -1 });
+        //? check if products exist in DB or not
+        if (products.length) {
+            //? loop to get all products
+            for (const product of products) {
+                //? get all reviews for product
+                const reviews = await Review.find({ productId: product._id });
+                //? check if reviews exist in DB or not
+                if (reviews.length) {
+                    //? calculate the average rating for product
+                    const averageRating =
+                        reviews.reduce((acc, review) => acc + review.rating, 0) /
+                        reviews.length;
+                    //? update product rating
+                    product.rating = averageRating;
+                    //? save product
+                    await product.save();
+                }
+            }
+        }
+    });
+};
+
+export { disableCouponsCron, deleteAddressesCron, calculateProductRatingCron };

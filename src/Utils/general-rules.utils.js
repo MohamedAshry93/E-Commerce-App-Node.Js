@@ -3,12 +3,7 @@ import Joi from "joi";
 import { Types } from "mongoose";
 
 //# utils
-import {
-    Badges,
-    DiscountType,
-    Gender,
-    SystemRoles,
-} from "./enums.utils.js";
+import { Badges, DiscountType, Gender, SystemRoles } from "./enums.utils.js";
 
 //? general object rule
 const objectIdRule = (value, helper) => {
@@ -18,7 +13,7 @@ const objectIdRule = (value, helper) => {
         : helper.message("Invalid objectId length must be 24 and hexadecimal");
 };
 
-//? general rule validation
+//? general rules validation
 const generalRule = {
     objectId: Joi.string().custom(objectIdRule).required().messages({
         "string.base": "objectId must be a string",
@@ -118,7 +113,7 @@ const generalRule = {
         .messages({
             "string.base": "gender must be a string",
             "string.empty": "Invalid gender it cannot be an empty string",
-            "any.only": "gender must be either Male or Female",
+            "any.only": `gender must be one of ${Object.values(Gender).join(", ")}`,
         }),
     userType: Joi.string()
         .valid(...Object.values(SystemRoles))
@@ -127,7 +122,9 @@ const generalRule = {
             "string.base": "userType must be a string",
             "string.empty": "Invalid userType it cannot be an empty string",
             "any.required": "userType is required",
-            "any.only": "userType must be either User or Company_ADMIN",
+            "any.only": `userType must be one of ${Object.values(SystemRoles).join(
+                ", "
+            )}`,
         }),
     name: Joi.string().required().messages({
         "string.base": "model name must be a string",
@@ -162,7 +159,7 @@ const generalRule = {
         .messages({
             "string.base": "badge must be a string",
             "string.empty": "Invalid badge it cannot be an empty string",
-            "any.only": "badge must be either BEST_SELLER or NEW or SALE",
+            "any.only": `badge must be one of ${Object.values(Badges).join(", ")}`,
         }),
     price: Joi.number().min(50).required().messages({
         "number.base": "price must be a number",
@@ -176,7 +173,9 @@ const generalRule = {
         .messages({
             "string.base": "type must be a string",
             "string.empty": "Invalid type it cannot be an empty string",
-            "any.only": "type must be either PERCENTAGE or AMOUNT",
+            "any.only": `type must be one of ${Object.values(DiscountType).join(
+                ", "
+            )}`,
         }),
     discountAmount: Joi.number()
         .positive()
@@ -269,8 +268,11 @@ const generalRule = {
         .messages({
             "string.base": "couponType must be a string",
             "string.empty": "Invalid couponType it cannot be an empty string",
+            "string.valid": "couponType must be a valid coupon type",
             "any.required": "couponType is required",
-            "any.only": "couponType must be either PERCENTAGE or AMOUNT",
+            "any.only": `couponType must be one of ${Object.values(DiscountType).join(
+                ", "
+            )}`,
         }),
     couponAmount: Joi.number()
         .when("couponType", {
@@ -317,7 +319,7 @@ const generalRule = {
         "boolean.valid": "isEnable must be a boolean value (true or false)",
         "boolean.empty": "Invalid isEnable it cannot be an empty boolean",
         "any.required": "isEnable is required",
-    })
+    }),
 };
 
 export { generalRule };

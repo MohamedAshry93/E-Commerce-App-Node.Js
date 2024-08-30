@@ -23,4 +23,40 @@ const Gender = {
     FEMALE: "Female",
 };
 
-export { Badges, DiscountType, SystemRoles, Gender, CouponRoles };
+const PaymentMethod = {
+    CASH: "Cash",
+    CREDIT_CARD: "Credit Card",
+    PAYPAL: "PayPal",
+    STRIPE: "Stripe",
+    WALLET: "Wallet",
+};
+
+const OrderStatus = {
+    PENDING: "Pending",
+    DELIVERED: "Delivered",
+    CANCELLED: "Cancelled",
+    PLACED: "Placed",
+    CONFIRMED: "Confirmed",
+    REFUNDED: "Refunded",
+    RETURNED: "Returned",
+    DROPPED: "Dropped",
+    ON_WAY: "OnWay",
+};
+
+const ReviewStatus = {
+    PENDING: "Pending",
+    APPROVED: "Approved",
+    REJECTED: "Rejected",
+};
+
+
+export {
+    Badges,
+    DiscountType,
+    SystemRoles,
+    Gender,
+    CouponRoles,
+    PaymentMethod,
+    OrderStatus,
+    ReviewStatus,
+};

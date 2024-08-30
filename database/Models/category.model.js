@@ -21,6 +21,11 @@ const categorySchema = new Schema(
             trim: true,
             lowercase: true,
         },
+        customId: {
+            type: String,
+            required: true,
+            unique: true,
+        },
         //# Images section
         images: {
             secure_url: {
@@ -33,16 +38,11 @@ const categorySchema = new Schema(
                 unique: true,
             },
         },
-        //# Ids section
+        //# ObjectIds section
         createdBy: {
             type: Schema.Types.ObjectId,
             ref: "User",
             required: true,
-        },
-        customId: {
-            type: String,
-            required: true,
-            unique: true,
         },
         subCategories: [
             {

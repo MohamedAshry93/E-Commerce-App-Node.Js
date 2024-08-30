@@ -46,6 +46,7 @@ const userSchema = new Schema(
             type: String,
             required: [true, "phone number is required"],
         },
+        resetPasswordOtp: String,
         //# Numbers section
         age: {
             type: Number,
@@ -65,10 +66,9 @@ const userSchema = new Schema(
             type: Boolean,
             default: false,
         },
-        //# Dates section
-        resetPasswordOtp: String,
-        resetPasswordExpires: Date,
         resetPasswordVerified: Boolean,
+        //# Dates section
+        resetPasswordExpires: Date,
         passwordChangeAt: Date,
     },
     { timestamps: true, versionKey: "version_key" }

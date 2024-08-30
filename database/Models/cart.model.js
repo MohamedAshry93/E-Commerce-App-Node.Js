@@ -9,7 +9,7 @@ const { Schema, model } = mongoose;
 //# create cart schema
 const cartSchema = new Schema(
     {
-        //# Ids section
+        //# ObjectIds section
         userId: {
             type: Schema.Types.ObjectId,
             ref: "User",
@@ -17,11 +17,13 @@ const cartSchema = new Schema(
         },
         products: [
             {
+                //# ObjectIds section
                 productId: {
                     type: Schema.Types.ObjectId,
                     ref: "Product",
                     required: true,
                 },
+                //# Numbers section
                 quantity: {
                     type: Number,
                     required: true,

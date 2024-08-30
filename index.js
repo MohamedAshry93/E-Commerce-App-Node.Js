@@ -10,7 +10,12 @@ import connectionDB from "./database/connection.js";
 import * as routers from "./src/Modules/index.js";
 
 //# utils
-import { deleteAddressesCron, disableCouponsCron, ErrorHandlerClass } from "./src/Utils/index.js";
+import {
+    calculateProductRatingCron,
+    deleteAddressesCron,
+    disableCouponsCron,
+    ErrorHandlerClass,
+} from "./src/Utils/index.js";
 
 //# middlewares
 import { globalResponse } from "./src/Middlewares/index.js";
@@ -43,9 +48,13 @@ app.use("/orders", routers.orderRouter);
 app.use("/carts", routers.cartRouter);
 app.use("/addresses", routers.addressRouter);
 
+//# database connection
 connectionDB();
+
+//# cron jobs
 disableCouponsCron();
 deleteAddressesCron();
+calculateProductRatingCron();
 
 //# global error handling middleware
 app.use("*", (req, res, next) =>
@@ -62,4 +71,6 @@ app.use("*", (req, res, next) =>
 app.use(globalResponse);
 
 //# start server
-app.listen(port, () => console.log(`Example app listening on port ${port}! 👀`));
+app.listen(port, () =>
+    console.log(`Example app listening on port ${port}! 👀`)
+);

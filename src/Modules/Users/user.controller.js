@@ -13,6 +13,7 @@ import { sendEmailService } from "../../Services/send-email.service.js";
 import {
     Address,
     Brand,
+    Cart,
     Category,
     Coupon,
     Product,
@@ -401,6 +402,7 @@ const deletedAccount = async (req, res, next) => {
     if (user.userType == "User") {
         await User.findByIdAndDelete({ _id });
         await Address.deleteMany({ userId: _id });
+        await Cart.deleteOne({ userId: _id });
     }
     //? send response
     res.status(200).json({

@@ -34,13 +34,13 @@ const productSchema = new Schema(
             },
         },
         description: String,
-        specs: {
-            type: Map,
-            of: String | Number,
-        },
         badge: {
             type: String,
             enum: Object.values(Badges),
+        },
+        specs: {
+            type: Map,
+            of: String | Number,
         },
         //# Numbers section
         price: {
@@ -82,7 +82,9 @@ const productSchema = new Schema(
         },
         //# Images section
         images: {
+            //# Array section
             URLs: [
+                //# Strings section
                 {
                     secure_url: {
                         type: String,
@@ -95,13 +97,14 @@ const productSchema = new Schema(
                     },
                 },
             ],
+            //# String section
             customId: {
                 type: String,
                 required: true,
                 unique: true,
             },
         },
-        //# Ids section
+        //# ObjectIds section
         createdBy: {
             type: Schema.Types.ObjectId,
             ref: "User",
@@ -123,8 +126,21 @@ const productSchema = new Schema(
             required: true,
         },
     },
-    { timestamps: true, versionKey: "version_key" }
+    {
+        timestamps: true,
+        versionKey: "version_key",
+        toJSON: { virtuals: true },
+        toObject: { virtuals: true },
+        id: false,
+    }
 );
+
+//# create virtual populate with product reviews
+productSchema.virtual("reviews", {
+    ref: "Review",
+    foreignField: "productId",
+    localField: "_id",
+});
 
 export const Product =
     mongoose.models.Product || model("Product", productSchema);

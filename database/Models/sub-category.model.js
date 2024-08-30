@@ -23,6 +23,7 @@ const subCategorySchema = new Schema(
         },
         //# Images section
         images: {
+            //# Strings section
             secure_url: {
                 type: String,
                 required: true,
@@ -33,7 +34,7 @@ const subCategorySchema = new Schema(
                 unique: true,
             },
         },
-        //# Ids section
+        //# ObjectIds section
         createdBy: {
             type: Schema.Types.ObjectId,
             ref: "User",
@@ -49,7 +50,9 @@ const subCategorySchema = new Schema(
             required: true,
             unique: true,
         },
+        //# Array section
         brands: [
+            //# ObjectId section
             {
                 type: Schema.Types.ObjectId,
                 ref: "Brand",

@@ -311,51 +311,56 @@ const getAllSubCategories = async (req, res, next) => {
               });
           */
 
-    /*
-          /// => way No.2 using using paginate method from mongoose-paginate-v2 as schema plugin ///
-            //? find all subCategories paginated with their brands
-              const subCategories = await SubCategory.paginate(
-                  {},
-                  {
-                      populate: "brands",
-                      limit,
-                      page,
-                      skip,
-                  }
-              );
-            //? return response
-              res.status(200).json({
-                  status: "success",
-                  message: "Sub-Categories found successfully",
-                  subCategoriesData: subCategories,
-              });
-          */
-
-    /// => way No.3 using api features ///
-    //? destruct data from req.query
-    let { limit = 5, page = 1 } = req.query;
-    if (page < 1) page = 1;
-    if (limit < 1) limit = 5;
-    //? build a query
-    const mongooseQuery = SubCategory.find();
-    const ApiFeaturesInstance = new ApiFeatures(mongooseQuery, req.query)
-        .paginate()
-        .search()
-        .limitFields();
-    //? execute query
-    const subCategories = await ApiFeaturesInstance.mongooseQuery.populate(
-        "brands"
-    );
-    //? count total number of documents
-    const count = await SubCategory.countDocuments();
-    //? send response
+    /// => way No.2 using using paginate method from mongoose-paginate-v2 as schema plugin ///
+    //? find all subCategories paginated with their brands
+    //? get query object
+    const query = { ...req.query };
+    //? get populate array
+    const populateArray = [
+        { path: "brands", select: "name logo -_id" },
+        { path: "categoryId", select: "name images -_id" },
+    ];
+    //? get paginated sub-categories
+    const ApiFeaturesInstance = new ApiFeatures(SubCategory, query, populateArray)
+        .pagination()
+        .filters()
+        .sort()
+        .search();
+    const subCategories = await ApiFeaturesInstance.mongooseQuery;
+    //? return response
     res.status(200).json({
         status: "success",
-        message: "SubCategories found successfully",
+        message: "Sub-Categories found successfully",
         subCategoriesData: subCategories,
-        totalPages: Math.ceil(count / limit),
-        currentPage: page,
     });
+
+    /*
+        /// => way No.3 using api features ///
+        //? destruct data from req.query
+        let { limit = 5, page = 1 } = req.query;
+        if (page < 1) page = 1;
+        if (limit < 1) limit = 5;
+        //? build a query
+        const mongooseQuery = SubCategory.find();
+        const ApiFeaturesInstance = new ApiFeatures(mongooseQuery, req.query)
+            .paginate()
+            .search()
+            .limitFields();
+        //? execute query
+        const subCategories = await ApiFeaturesInstance.mongooseQuery.populate(
+            "brands"
+        );
+        //? count total number of documents
+        const count = await SubCategory.countDocuments();
+        //? send response
+        res.status(200).json({
+            status: "success",
+            message: "SubCategories found successfully",
+            subCategoriesData: subCategories,
+            totalPages: Math.ceil(count / limit),
+            currentPage: page,
+        });
+        */
 };
 
 export {

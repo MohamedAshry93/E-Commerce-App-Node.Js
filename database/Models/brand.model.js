@@ -9,7 +9,7 @@ const brandSchema = new Schema(
         //# Strings section
         name: {
             type: String,
-            required: [true,"Brand name is required"],
+            required: [true, "Brand name is required"],
             unique: true,
             trim: true,
             lowercase: true,
@@ -27,6 +27,11 @@ const brandSchema = new Schema(
                 });
             },
         },
+        customId: {
+            type: String,
+            required: true,
+            unique: true,
+        },
         //# logo section
         logo: {
             secure_url: {
@@ -39,7 +44,7 @@ const brandSchema = new Schema(
                 unique: true,
             },
         },
-        //# Ids section
+        //# ObjectIds section
         createdBy: {
             type: Schema.Types.ObjectId,
             ref: "User",
@@ -54,11 +59,6 @@ const brandSchema = new Schema(
             type: Schema.Types.ObjectId,
             ref: "Category",
             required: true,
-        },
-        customId: {
-            type: String,
-            required: true,
-            unique: true,
         },
         products: [
             {

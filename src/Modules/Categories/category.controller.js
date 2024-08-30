@@ -63,7 +63,7 @@ const createCategory = async (req, res, next) => {
             public_id,
         },
         customId,
-        createdBy: _id
+        createdBy: _id,
     };
     //? create category to database
     const newCategory = await Category.create(category);
@@ -100,7 +100,9 @@ const getCategory = async (req, res, next) => {
     if (id) queryFilters._id = id;
     if (slug) queryFilters.slug = slug;
     //? find the category
-    const category = await Category.findOne(queryFilters).select("-createdAt -updatedAt -version_key");
+    const category = await Category.findOne(queryFilters).select(
+        "-createdAt -updatedAt -version_key"
+    );
     //? check if category exists
     if (!category) {
         return next(
@@ -244,75 +246,77 @@ const deleteCategory = async (req, res, next) => {
 //! ========================= Get all categories paginated with their sub-categories ========================= //
 const getAllCategories = async (req, res, next) => {
     /*
-        //? destruct data from req.query
-        const { page = 1, limit = 5 } = req.query;
-        const skip = (page - 1) * limit;
-      */
+          //? destruct data from req.query
+          const { page = 1, limit = 5 } = req.query;
+          const skip = (page - 1) * limit;
+        */
 
     /*
-        /// => way No.1 using find, limit and skip method ///
-        //? find all categories paginated with their sub-categories
-        const categories = await Category.find()
-            .populate("subCategories")
-            .skip(skip)
-            .limit(limit);
-        //? count total number of pages
-        const count = await Category.countDocuments();
-        //? return response
-        res.status(200).json({
-            status: "success",
-            message: "Categories found successfully",
-            categoriesData: categories,
-            totalPages: Math.ceil(count / limit),
-            currentPage: page,
-        });
-      */
+          /// => way No.1 using find, limit and skip method ///
+          //? find all categories paginated with their sub-categories
+          const categories = await Category.find()
+              .populate("subCategories")
+              .skip(skip)
+              .limit(limit);
+          //? count total number of pages
+          const count = await Category.countDocuments();
+          //? return response
+          res.status(200).json({
+              status: "success",
+              message: "Categories found successfully",
+              categoriesData: categories,
+              totalPages: Math.ceil(count / limit),
+              currentPage: page,
+          });
+        */
 
-    /*
-        /// => way No.2 using using paginate method from mongoose-paginate-v2 as schema plugin ///
-        //? find all categories paginated with their sub-categories
-        const categories = await Category.paginate(
-            {},
-            {
-                page,
-                limit,
-                skip,
-                populate: ["subCategories"],
-            }
-        );
-        //? return response
-        res.status(200).json({
-            status: "success",
-            message: "Categories found successfully",
-            categoriesData: categories,
-        });
-      */
-
-    /// => way No.3 using api features ///
-    //? destruct data from req.query
-    let { limit = 5, page = 1 } = req.query;
-    if (page < 1) page = 1;
-    if (limit < 1) limit = 5;
-    //? build a query
-    const mongooseQuery = Category.find();
-    const ApiFeaturesInstance = new ApiFeatures(mongooseQuery, req.query)
-        .paginate()
-        .search()
-        .limitFields();
-    //? execute query
-    const categories = await ApiFeaturesInstance.mongooseQuery.populate(
-        "subCategories"
-    );
-    //? count total number of documents
-    const count = await Category.countDocuments();
-    //? send response
+    /// => way No.2 using using paginate method from mongoose-paginate-v2 as schema plugin ///
+    //? find all categories paginated with their sub-categories
+    //? get query object
+    const query = { ...req.query };
+    //? get populate array
+    const populateArray = [{ path: "subCategories", select: "name images -_id" }];
+    //? get paginated categories
+    const ApiFeaturesInstance = new ApiFeatures(Category, query, populateArray)
+        .pagination()
+        .filters()
+        .sort()
+        .search();
+    const categories = await ApiFeaturesInstance.mongooseQuery;
+    //? return response
     res.status(200).json({
         status: "success",
         message: "Categories found successfully",
         categoriesData: categories,
-        totalPages: Math.ceil(count / limit),
-        currentPage: page,
     });
+
+    /*       
+         /// => way No.3 using api features ///
+         //? destruct data from req.query
+         let { limit = 5, page = 1 } = req.query;
+         if (page < 1) page = 1;
+         if (limit < 1) limit = 5;
+         //? build a query
+         const mongooseQuery = Category.find();
+         const ApiFeaturesInstance = new ApiFeatures(mongooseQuery, req.query)
+             .paginate()
+             .search()
+             .limitFields();
+         //? execute query
+         const categories = await ApiFeaturesInstance.mongooseQuery.populate(
+             "subCategories"
+         );
+         //? count total number of documents
+         const count = await Category.countDocuments();
+         //? send response
+         res.status(200).json({
+             status: "success",
+             message: "Categories found successfully",
+             categoriesData: categories,
+             totalPages: Math.ceil(count / limit),
+             currentPage: page,
+         });
+         */
 };
 
 export {
