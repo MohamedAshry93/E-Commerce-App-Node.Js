@@ -69,9 +69,9 @@ const userSchema = new Schema(
         resetPasswordVerified: Boolean,
         //# Dates section
         resetPasswordExpires: Date,
-        passwordChangeAt: Date,
+        passwordChangedAt: Date,
     },
-    { timestamps: true, versionKey: "version_key" }
+    { timestamps: true, versionKey: false }
 );
 
 //! ================================ Document Middleware ================================ //

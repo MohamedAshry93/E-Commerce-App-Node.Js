@@ -14,6 +14,8 @@ const couponSchema = new Schema(
             type: String,
             unique: true,
             required: true,
+            trim: true,
+            lowercase: true,
         },
         couponType: {
             type: String,
@@ -68,7 +70,7 @@ const couponSchema = new Schema(
             required: true,
         },
     },
-    { timestamps: true, versionKey: "version_key" }
+    { timestamps: true, versionKey: false }
 );
 
 export const Coupon = mongoose.models.Coupon || model("Coupon", couponSchema);
@@ -91,9 +93,9 @@ const couponChangeLogSchema = new Schema(
         changes: {
             type: Object,
             required: true,
-        }
+        },
     },
-    { timestamps: true, versionKey: "version_key" }
+    { timestamps: true, versionKey: false }
 );
 
 export const CouponChangeLog =

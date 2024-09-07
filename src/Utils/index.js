@@ -7,3 +7,4 @@ export * from "./calculate-price.utils.js";
 export * from "./api-features.utils.js";
 export * from "./crons.utils.js";
 export * from "./validate-coupon.utils.js";
+export * from "./pdf.js";

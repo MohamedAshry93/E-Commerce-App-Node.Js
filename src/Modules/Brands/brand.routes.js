@@ -16,7 +16,7 @@ import { extensions, SystemRoles } from "../../Utils/index.js";
 //# models
 import { Brand } from "../../../database/Models/index.js";
 
-const brandRouter = Router();
+const brandRouter = Router({ mergeParams: true });
 
 //! add brand API router
 brandRouter.post(
@@ -47,7 +47,10 @@ brandRouter.get(
 );
 
 //! get all brands API router
-brandRouter.get("/list", middleware.errorHandling(brandController.getAllBrands));
+brandRouter.get(
+    "/list",
+    middleware.errorHandling(brandController.getAllBrands)
+);
 
 //! get brand API router
 brandRouter.get(
@@ -62,7 +65,9 @@ brandRouter.get(
 brandRouter.put(
     "/update/:_id",
     middleware.errorHandling(middleware.authenticationMiddleware()),
-    middleware.errorHandling(middleware.authorizationMiddleware(SystemRoles.COMPANY_ADMIN)),
+    middleware.errorHandling(
+        middleware.authorizationMiddleware(SystemRoles.COMPANY_ADMIN)
+    ),
     middleware.errorHandling(
         middleware
             .multerHostMiddleware({ allowedExtensions: extensions.IMAGE_EXTENSIONS })
@@ -79,7 +84,9 @@ brandRouter.put(
 brandRouter.delete(
     "/delete/:_id",
     middleware.errorHandling(middleware.authenticationMiddleware()),
-    middleware.errorHandling(middleware.authorizationMiddleware(SystemRoles.COMPANY_ADMIN)),
+    middleware.errorHandling(
+        middleware.authorizationMiddleware(SystemRoles.COMPANY_ADMIN)
+    ),
     middleware.errorHandling(
         middleware.validationMiddleware(brandSchema.deleteBrandSchema)
     ),

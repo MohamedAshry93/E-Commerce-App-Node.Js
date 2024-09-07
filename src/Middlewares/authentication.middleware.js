@@ -1,5 +1,6 @@
 //# dependencies
 import jwt from "jsonwebtoken";
+import { DateTime } from "luxon";
 
 //# utils
 import { ErrorHandlerClass } from "../Utils/index.js";
@@ -52,9 +53,7 @@ const authenticationMiddleware = () => {
             );
         }
         //? find user by id
-        const user = await User.findById(decodedData?.userId).select(
-            "-password"
-        );
+        const user = await User.findById(decodedData?.userId).select("-password");
         //? check user exists in database
         if (!user) {
             return next(
@@ -64,6 +63,21 @@ const authenticationMiddleware = () => {
                     "Error in findUserById",
                     "at authentication middleware",
                     { userId: decodedData.userId }
+                )
+            );
+        }
+        //? check password change time with iat
+        let timeChangedPassword = parseInt(
+            DateTime.fromJSDate(user.passwordChangedAt).toSeconds()
+        );
+        if (timeChangedPassword > decodedData.iat) {
+            return next(
+                new ErrorHandlerClass(
+                    "Token expired. Please login again",
+                    401,
+                    "Error in authenticationMiddleware API",
+                    "at authentication middleware",
+                    { token }
                 )
             );
         }

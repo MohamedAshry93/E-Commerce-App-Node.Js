@@ -38,7 +38,13 @@ const addToCart = async (req, res, next) => {
         const newCart = new Cart({
             userId,
             products: [
-                { productId: product._id, quantity, price: product.appliedPrice },
+                {
+                    productId: product._id,
+                    quantity,
+                    price: product.appliedPrice,
+                    title: product.title,
+                    description: product.description,
+                },
             ],
         });
         await newCart.save();
@@ -68,6 +74,8 @@ const addToCart = async (req, res, next) => {
         productId: product._id,
         quantity,
         price: product.appliedPrice,
+        title: product.title,
+        description: product.description,
     });
     //? save cart
     await cart.save();

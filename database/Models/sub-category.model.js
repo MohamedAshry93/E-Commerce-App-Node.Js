@@ -59,8 +59,18 @@ const subCategorySchema = new Schema(
             },
         ],
     },
-    { timestamps: true, versionKey: "version_key" }
+    { timestamps: true, versionKey: false }
 );
+
+//! ===================================== Query Middleware ===================================== //
+//$ post hook to delete relevant brands and products from database
+subCategorySchema.post("findOneAndDelete", async function () {
+    const _id = this.getQuery()._id;
+    //? delete relevant brands from database
+    await mongoose.models.Brand.deleteMany({ subCategoryId: _id });
+    //? delete relevant products from database
+    await mongoose.models.Product.deleteMany({ subCategoryId: _id });
+});
 
 export const SubCategory =
     mongoose.models.SubCategory || model("SubCategory", subCategorySchema);

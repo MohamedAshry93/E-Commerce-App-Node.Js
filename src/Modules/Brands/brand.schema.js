@@ -6,7 +6,7 @@ import { generalRule } from "../../Utils/index.js";
 
 //? create brand schema validation
 const createBrandSchema = {
-    query: Joi.object({
+    params: Joi.object({
         category: generalRule.objectId,
         subCategory: generalRule.objectId,
     }),

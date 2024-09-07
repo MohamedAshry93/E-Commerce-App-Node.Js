@@ -16,13 +16,13 @@ const sendEmailService = async ({
         port: 587,
         secure: false,
         auth: {
-            user: process.env.USER_EMAIL,
-            pass: process.env.USER_PASS,
+            user: process.env.SENDER_EMAIL,
+            pass: process.env.SENDER_PASS,
         },
     });
     //? send mail with defined transport object
     const info = await transporter.sendMail({
-        from: '"3shry 👀" <mohamedashry593@gmail.com>', // sender address
+        from: `"3shry 👀" <${process.env.SENDER_EMAIL}>`, // sender address
         to: to ? to : "",
         cc: cc ? cc : "",
         subject: subject ? subject : "hi 👋",

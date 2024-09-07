@@ -13,11 +13,11 @@ import {
 } from "../../Utils/index.js";
 
 //# models
-import { Product, Brand } from "../../../database/Models/index.js";
+import { Product, Brand, Review } from "../../../database/Models/index.js";
 
 //# APIS
 /*
-@api {POST} /products/create (create new product)
+@api {POST} /categories/:categoryId/:subCategoryId/:brandId/products/create (create new product)
 */
 //! ========================================== Create Product ========================================== //
 const createProduct = async (req, res, next) => {
@@ -167,49 +167,11 @@ const getProduct = async (req, res, next) => {
 */
 //! ================================ Get All Products with pagination ================================ //
 const getAllProducts = async (req, res, next) => {
-    /*
-                        //? destruct data from req.query
-                            const {
-                                page = 1,
-                                limit = 5,
-                                sort,
-                                ...filters
-                            } = req.query;
-                            const skip = (page - 1) * limit;
-                        //? destruct price, appliedPrice, stock, categoryId, subCategoryId, brandId, rating from filters
-                            const filtersAsString = JSON.stringify(filters);
-                            const replacedFilters = filtersAsString.replaceAll(
-                                /lt|gt|lte|gte|eq|ne|regex/g,
-                                (ele) => `$${ele}`
-                            );
-                            const parsedFilters = JSON.parse(replacedFilters);
-                        */
-
-    /*
-                        /// => way No.1 using find, limit and skip method ///
-                        //? find all products with pagination
-                            const products = await Product.find(parsedFilters)
-                                .limit(limit)
-                                .skip(skip)
-                                .populate([{ path: "brandId" }, { path: "categoryId" }, { path: "subCategoryId" }])
-                                .sort(sort);
-                        //? count total number of documents
-                            const count = await Product.countDocuments();
-                        //? send response
-                            res.status(200).json({
-                                status: "success",
-                                message: "Products found successfully",
-                                productsData: products,
-                                totalPages: Math.ceil(count / limit),
-                                currentPage: page,
-                            });
-                        */
-
     /// => way No.2 using using paginate method from mongoose-paginate-v2 as schema plugin ///
     //? find all products with pagination
     //? get query object
     const query = { ...req.query };
-        //? get populate array
+    //? get populate array
     const populateArray = [
         { path: "brandId", select: "name logo" },
         { path: "categoryId", select: "name images" },
@@ -229,36 +191,6 @@ const getAllProducts = async (req, res, next) => {
         message: "Products found successfully",
         productsData: products,
     });
-
-    /*
-                /// => way No.3 using api features ///
-                //? destruct data from req.query
-                let { limit = 5, page = 1 } = req.query;
-                //? build a query
-                const mongooseQuery = Product.find();
-                const ApiFeaturesInstance = new ApiFeatures(mongooseQuery, req.query)
-                    .paginate()
-                    .filter()
-                    .search()
-                    .limitFields()
-                    .sort();
-                //? execute query
-                const products = await ApiFeaturesInstance.mongooseQuery.populate([
-                    { path: "brandId" },
-                    { path: "categoryId" },
-                    { path: "subCategoryId" },
-                ]);
-                //? count total number of documents
-                const count = await Product.countDocuments();
-                //? send response
-                res.status(200).json({
-                    status: "success",
-                    message: "Products found successfully",
-                    productsData: products,
-                    totalPages: Math.ceil(count / limit),
-                    currentPage: page,
-                });
-            */
 };
 
 /*
@@ -430,6 +362,8 @@ const deleteProduct = async (req, res, next) => {
             )
         );
     }
+    //? delete product reviews from DB
+    await Review.deleteMany({ productId: deletedProduct._id });
     //? return response
     res.status(200).json({
         status: "success",

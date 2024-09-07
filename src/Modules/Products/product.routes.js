@@ -16,7 +16,17 @@ import { extensions, SystemRoles } from "../../Utils/index.js";
 //# models
 import { Brand } from "../../../database/Models/index.js";
 
-const productRouter = Router();
+//# models route
+import { wishListRouter } from "../WishLists/wish-list.routes.js";
+import { reviewRouter } from "../Reviews/review.routes.js";
+
+const productRouter = Router({ mergeParams: true });
+
+//$ merged productId with wish-lists API routers
+productRouter.use("/:productId/wish-lists", wishListRouter);
+
+//$ merged productId with reviews API routers
+productRouter.use("/:productId/reviews", reviewRouter);
 
 //! add product API router
 productRouter.post(
@@ -30,9 +40,9 @@ productRouter.post(
             .multerHostMiddleware({ allowedExtensions: extensions.IMAGE_EXTENSIONS })
             .array("images", 5)
     ),
-    // middleware.errorHandling(
-    //     middleware.validationMiddleware(productSchema.createProductSchema)
-    // ),
+    middleware.errorHandling(
+        middleware.validationMiddleware(productSchema.createProductSchema)
+    ),
     middleware.errorHandling(middleware.checkIdsExist(Brand)),
     middleware.errorHandling(productController.createProduct)
 );
@@ -49,9 +59,9 @@ productRouter.put(
             .multerHostMiddleware({ allowedExtensions: extensions.IMAGE_EXTENSIONS })
             .array("images", 5)
     ),
-    // middleware.errorHandling(
-    //     middleware.validationMiddleware(productSchema.updateProductSchema)
-    // ),
+    middleware.errorHandling(
+        middleware.validationMiddleware(productSchema.updateProductSchema)
+    ),
     middleware.errorHandling(middleware.checkIdsExist(Brand)),
     middleware.errorHandling(productController.updateProduct)
 );

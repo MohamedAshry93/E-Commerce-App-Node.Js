@@ -50,6 +50,17 @@ const orderSchema = new Schema(
                     type: Number,
                     required: true,
                 },
+                //# Strings section
+                title: {
+                    type: String,
+                    required: true,
+                    trim: true,
+                },
+                description: {
+                    type: String,
+                    required: true,
+                    trim: true,
+                },
             },
         ],
         //# Boolean section
@@ -90,6 +101,7 @@ const orderSchema = new Schema(
             required: true,
         },
         address: String,
+        payment_intent: String,
         //# Dates section
         arrivalEstimateTime: {
             type: Date,
@@ -98,7 +110,7 @@ const orderSchema = new Schema(
         deliveredAt: Date,
         canceledAt: Date,
     },
-    { timestamps: true, versionKey: "version_key" }
+    { timestamps: true, versionKey: false }
 );
 
 export const Order = mongoose.models.Order || model("Order", orderSchema);

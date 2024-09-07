@@ -47,7 +47,7 @@ const addressSchema = new Schema(
         //# Dates section
         deletedAt: Date,
     },
-    { timestamps: true, versionKey: "version_key" }
+    { timestamps: true, versionKey: false }
 );
 
 export const Address =

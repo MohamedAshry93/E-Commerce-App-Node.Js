@@ -38,6 +38,8 @@ const createOrderSchema = {
             "boolean.base": "fromCart must be a boolean",
             "any.only": "fromCart must be true or false",
         }),
+        productId: generalRule.objectId.optional(),
+        quantity: generalRule.quantity.optional(),
     }),
 };
 
@@ -62,9 +64,16 @@ const getOrderDetailsByIdSchema = {
     }),
 };
 
+//? payment with stripe schema validation
+const paymentWithStripeSchema = {
+    params: Joi.object({
+        orderId: generalRule.objectId,
+    }),
+};
 export {
     createOrderSchema,
     cancelOrderSchema,
     deliveredOrderSchema,
     getOrderDetailsByIdSchema,
+    paymentWithStripeSchema,
 };

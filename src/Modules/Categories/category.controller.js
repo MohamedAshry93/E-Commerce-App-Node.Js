@@ -12,12 +12,7 @@ import {
 } from "../../Utils/index.js";
 
 //# models
-import {
-    Brand,
-    Category,
-    Product,
-    SubCategory,
-} from "./../../../database/Models/index.js";
+import { Category } from "./../../../database/Models/index.js";
 
 //# APIS
 /*
@@ -101,7 +96,7 @@ const getCategory = async (req, res, next) => {
     if (slug) queryFilters.slug = slug;
     //? find the category
     const category = await Category.findOne(queryFilters).select(
-        "-createdAt -updatedAt -version_key"
+        "-createdAt -updatedAt"
     );
     //? check if category exists
     if (!category) {
@@ -168,7 +163,6 @@ const updateCategory = async (req, res, next) => {
         category.images.secure_url = secure_url;
         category.images.public_id = public_id;
     }
-    category.version_key += 1;
     //? update category
     const updatedCategory = await category.save();
     //? check if category updated or not
@@ -216,22 +210,6 @@ const deleteCategory = async (req, res, next) => {
     await cloudinaryConfig().api.delete_resources_by_prefix(categoryPath);
     //? delete folder from cloudinary
     await cloudinaryConfig().api.delete_folder(categoryPath);
-    //? delete relevant sub-category from database
-    const deletedSubCategories = await SubCategory.deleteMany({
-        categoryId: deletedCategory._id,
-    });
-    //? if sub-categories deleted => delete relevant products and brands from database
-    if (deletedSubCategories.deletedCount) {
-        //? delete relevant brands from database
-        const deletedBrands = await Brand.deleteMany({
-            categoryId: deletedCategory._id,
-        });
-        //? if brands deleted => delete relevant products from database
-        if (deletedBrands.deletedCount) {
-            //? delete relevant products from database
-            await Product.deleteMany({ categoryId: deletedCategory._id });
-        }
-    }
     //? return response
     res.status(200).json({
         status: "success",
@@ -245,32 +223,7 @@ const deleteCategory = async (req, res, next) => {
 */
 //! ========================= Get all categories paginated with their sub-categories ========================= //
 const getAllCategories = async (req, res, next) => {
-    /*
-          //? destruct data from req.query
-          const { page = 1, limit = 5 } = req.query;
-          const skip = (page - 1) * limit;
-        */
-
-    /*
-          /// => way No.1 using find, limit and skip method ///
-          //? find all categories paginated with their sub-categories
-          const categories = await Category.find()
-              .populate("subCategories")
-              .skip(skip)
-              .limit(limit);
-          //? count total number of pages
-          const count = await Category.countDocuments();
-          //? return response
-          res.status(200).json({
-              status: "success",
-              message: "Categories found successfully",
-              categoriesData: categories,
-              totalPages: Math.ceil(count / limit),
-              currentPage: page,
-          });
-        */
-
-    /// => way No.2 using using paginate method from mongoose-paginate-v2 as schema plugin ///
+    /// => using paginate method from mongoose-paginate-v2 as schema plugin ///
     //? find all categories paginated with their sub-categories
     //? get query object
     const query = { ...req.query };
@@ -289,34 +242,6 @@ const getAllCategories = async (req, res, next) => {
         message: "Categories found successfully",
         categoriesData: categories,
     });
-
-    /*       
-         /// => way No.3 using api features ///
-         //? destruct data from req.query
-         let { limit = 5, page = 1 } = req.query;
-         if (page < 1) page = 1;
-         if (limit < 1) limit = 5;
-         //? build a query
-         const mongooseQuery = Category.find();
-         const ApiFeaturesInstance = new ApiFeatures(mongooseQuery, req.query)
-             .paginate()
-             .search()
-             .limitFields();
-         //? execute query
-         const categories = await ApiFeaturesInstance.mongooseQuery.populate(
-             "subCategories"
-         );
-         //? count total number of documents
-         const count = await Category.countDocuments();
-         //? send response
-         res.status(200).json({
-             status: "success",
-             message: "Categories found successfully",
-             categoriesData: categories,
-             totalPages: Math.ceil(count / limit),
-             currentPage: page,
-         });
-         */
 };
 
 export {

@@ -2,9 +2,10 @@
 import jwt from "jsonwebtoken";
 import { compareSync, hashSync } from "bcrypt";
 import axios from "axios";
+import { DateTime } from "luxon";
 
 //# utils
-import { ErrorHandlerClass } from "../../Utils/index.js";
+import { ErrorHandlerClass, SystemRoles } from "../../Utils/index.js";
 
 //# services
 import { sendEmailService } from "../../Services/send-email.service.js";
@@ -17,6 +18,7 @@ import {
     Category,
     Coupon,
     Product,
+    Review,
     SubCategory,
     User,
 } from "./../../../database/Models/index.js";
@@ -349,7 +351,6 @@ const updatedAccount = async (req, res, next) => {
             );
         }
     }
-    user.version_key += 1;
     //? save user in database
     const updatedUser = await user.save();
     //? check user saved in database or not
@@ -390,7 +391,7 @@ const deletedAccount = async (req, res, next) => {
     //? check user exists in database or not
     const user = await User.findById({ _id });
     //? check if user is admin or not
-    if (user.userType == "Company_ADMIN") {
+    if (user.userType == SystemRoles.COMPANY_ADMIN) {
         await Category.deleteMany({ createdBy: _id });
         await SubCategory.deleteMany({ createdBy: _id });
         await Brand.deleteMany({ createdBy: _id });
@@ -399,10 +400,18 @@ const deletedAccount = async (req, res, next) => {
         await Address.deleteMany({ userId: _id });
         await Coupon.deleteMany({ createdBy: _id });
     }
-    if (user.userType == "User") {
+    if (user.userType == SystemRoles.USER) {
         await User.findByIdAndDelete({ _id });
         await Address.deleteMany({ userId: _id });
         await Cart.deleteOne({ userId: _id });
+        const coupons = await Coupon.find();
+        for (const coupon of coupons) {
+            if (coupon.couponAssignedToUsers.includes({ userId: _id })) {
+                coupon.couponAssignedToUsers.pull({ userId: _id });
+                await coupon.save();
+            }
+        }
+        await Review.deleteMany({ reviewedBy: _id });
     }
     //? send response
     res.status(200).json({
@@ -489,8 +498,10 @@ const updatedPassword = async (req, res, next) => {
         );
     }
     //? check if password and confirmPassword are updated
-    if (password) user.password = password;
-    user.version_key += 1;
+    if (password) {
+        user.password = password;
+        user.passwordChangedAt = DateTime.now();
+    }
     //? update user
     const updatedUser = await user.save();
     //? check user updated or not
@@ -564,7 +575,7 @@ const forgetPassword = async (req, res, next) => {
     //? save hashed OTP in database
     user.resetPasswordOtp = hashedOtp;
     //? set expiration time for OTP (10 min)
-    user.resetPasswordExpires = Date.now() + 3600000;
+    user.resetPasswordExpires = DateTime.now() + 3600000;
     user.resetPasswordVerified = false;
     //? update user
     const updatedData = await user.save();
@@ -598,7 +609,7 @@ const resetPassword = async (req, res, next) => {
     //? check user exists in database or not
     const user = await User.findOne({
         email,
-        resetPasswordExpires: { $gt: Date.now() },
+        resetPasswordExpires: { $gt: DateTime.now() },
     });
     if (!user) {
         return next(
@@ -625,13 +636,14 @@ const resetPassword = async (req, res, next) => {
     }
     //? update password
     user.password = password;
+    //? set password change time
+    user.passwordChangedAt = DateTime.now();
     //? delete hashed OTP from database
     user.resetPasswordOtp = undefined;
     //? delete expiration time from database
     user.resetPasswordExpires = undefined;
     //? set passwordVerified to true
     user.resetPasswordVerified = true;
-    user.version_key += 1;
     //? update user
     const updatedUser = await user.save();
     //? check user updated or not

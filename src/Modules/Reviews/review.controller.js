@@ -1,7 +1,3 @@
-//# dependencies
-
-//# middlewares
-
 //# utils
 import {
     ErrorHandlerClass,
@@ -14,7 +10,7 @@ import { Order, Product, Review } from "../../../database/Models/index.js";
 
 //# APIS
 /*
-@api {POST} /reviews/add/:productId (add new review)
+@api {POST} /products/:productId/reviews/add (add new review)
 */
 //! ========================================== Add Reviews ========================================== //
 const addReview = async (req, res, next) => {

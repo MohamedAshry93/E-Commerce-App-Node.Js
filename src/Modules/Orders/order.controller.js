@@ -1,13 +1,12 @@
 //# dependencies
 import { DateTime } from "luxon";
 
-//# middlewares
-
 //# utils
 import {
     ApiFeatures,
     applyCoupon,
     calculateCartSubTotal,
+    createInvoice,
     ErrorHandlerClass,
     OrderStatus,
     PaymentMethod,
@@ -23,6 +22,16 @@ import {
     Product,
 } from "../../../database/Models/index.js";
 
+//# payment
+import {
+    createCheckoutSession,
+    createPaymentIntent,
+    createStripeCoupon,
+} from "../../payment-handler/stripe.js";
+
+//# services
+import { sendEmailService } from "../../Services/send-email.service.js";
+
 //# APIS
 /*
 @api {POST} /orders/create (create new order)
@@ -33,6 +42,8 @@ const createOrder = async (req, res, next) => {
     const userId = req.authUser._id;
     //? destruct data from req.body
     const {
+        productId,
+        quantity,
         address,
         addressId,
         contactNumber,
@@ -42,44 +53,73 @@ const createOrder = async (req, res, next) => {
         couponCode,
         fromCart,
     } = req.body;
-    //? get user's cart with products
-    const userCart = await Cart.findOne({ userId }).populate(
-        "products.productId"
-    );
-    //? check if user has cart
-    if (!userCart || !userCart.products.length) {
-        return next(
-            new ErrorHandlerClass(
-                "Cart is empty",
-                400,
-                "Error in createOrder API",
-                "at Order controller",
-                { userCart }
-            )
+    let products = [];
+    let flag = false;
+    let checkUserCart = [{}];
+    //? check if user has productId and quantity
+    if (productId && quantity) {
+        products = [{ productId, quantity }];
+    } else {
+        //? get user's cart with products
+        const userCart = await Cart.findOne({ userId }).populate(
+            "products.productId"
         );
+        //? check if user has cart
+        if (!userCart || !userCart.products.length) {
+            return next(
+                new ErrorHandlerClass(
+                    "Cart is empty",
+                    400,
+                    "Error in createOrder API",
+                    "at Order controller",
+                    { userCart }
+                )
+            );
+        }
+        //? push products of userCart to initiate products array
+        products = userCart.products;
+        //? push userCart to initiate checkUserCart array
+        checkUserCart = userCart;
+        //? set flag
+        flag = true;
     }
+    let finalProducts = [];
     //? check if product still available or not
-    const isSoldOut = userCart.products.find(
-        (product) => product.productId.stock < product.quantity
-    );
-    if (isSoldOut) {
-        return next(
-            new ErrorHandlerClass(
-                `Product ${isSoldOut.productId.title} is sold out`,
-                400,
-                "Error in createOrder API at check product availability",
-                "at Order controller",
-                { isSoldOut }
-            )
-        );
+    for (let product of products) {
+        const productInfo = await Product.findOne({
+            _id: product.productId,
+            stock: { $gte: product.quantity },
+        });
+        if (!productInfo) {
+            return next(
+                new ErrorHandlerClass(
+                    "Product not exist or out of stock",
+                    404,
+                    "Error in createOrder API",
+                    "at Order controller",
+                    { productInfo }
+                )
+            );
+        }
+        //? push product to finalProducts array
+        if (flag) {
+            product = product.toObject();
+        }
+        product.title = productInfo.title;
+        product.description = productInfo.description;
+        product.price = productInfo.price;
+        finalProducts.push(product);
     }
     //? calculate new subTotal price
-    const subTotal = calculateCartSubTotal(userCart.products);
+    const subTotal = calculateCartSubTotal(finalProducts);
     let total = subTotal + shippingFee + VAT;
     //? check availability of coupon
     let coupon = null;
     if (couponCode) {
-        const isCouponValid = await validateCoupon(couponCode, userId);
+        const isCouponValid = await validateCoupon(
+            couponCode.toLowerCase(),
+            userId
+        );
         if (isCouponValid.error) {
             return next(
                 new ErrorHandlerClass(
@@ -106,6 +146,7 @@ const createOrder = async (req, res, next) => {
             )
         );
     }
+    let addressDetails = [{}];
     if (addressId) {
         //? get address from user addresses
         const addressInfo = await Address.findOne({ _id: addressId, userId });
@@ -119,6 +160,7 @@ const createOrder = async (req, res, next) => {
                 )
             );
         }
+        addressDetails = addressInfo;
     }
     //? payment method
     let orderStatus = OrderStatus.PENDING;
@@ -128,7 +170,7 @@ const createOrder = async (req, res, next) => {
     //? create order instance
     const orderInstance = new Order({
         userId,
-        products: userCart.products,
+        products: finalProducts,
         address,
         addressId,
         contactNumber,
@@ -147,15 +189,17 @@ const createOrder = async (req, res, next) => {
     //? save order
     const order = await orderInstance.save();
     //? update stock of products
-    userCart.products.forEach(async (product) => {
+    finalProducts.forEach(async (product) => {
         await Product.updateOne(
             { _id: product.productId },
             { $inc: { stock: -product.quantity } }
         );
     });
     //? clear user's cart
-    userCart.products = [];
-    await userCart.save();
+    if (!checkUserCart.length) {
+        checkUserCart.products = [];
+        await checkUserCart.save();
+    }
     //? increment usageCount of coupon
     if (order?.couponId) {
         const coupon = await Coupon.findById({ _id: order?.couponId });
@@ -164,10 +208,67 @@ const createOrder = async (req, res, next) => {
         ).numberOfUsage++;
         await coupon.save();
     }
+    //? create invoice
+    const invoice = {
+        shipping: {
+            name: req.authUser.userName,
+            address: address
+                ? address
+                : addressDetails.buildingNumber +
+                ", " +
+                addressDetails.floorNumber +
+                ", " +
+                "Main Street",
+            city: addressDetails.city,
+            state: "CA",
+            country: addressDetails.country,
+            postal_code: addressDetails.postalCode,
+        },
+        items: order?.products,
+        subtotal: order?.subTotal * 100,
+        paid: order?.total,
+        invoice_nr: order?._id,
+        date: order?.createdAt,
+        shippingFee: order?.shippingFee,
+        VAT: order?.VAT,
+        coupon: coupon?.couponAmount || 0,
+    };
+    await createInvoice(invoice, "invoice.pdf");
+    //? send email with invoice pdf
+    const isEmailSent = await sendEmailService({
+        to: req.authUser.email,
+        subject: "Order Placed",
+        html: "Your order has been placed successfully",
+        attachments: [
+            {
+                path: "invoice.pdf",
+                filename: "invoice.pdf",
+                contentType: "application/pdf",
+            },
+            {
+                path: "logo.jpeg",
+                filename: "logo.jpeg",
+                contentType: "image/jpeg",
+            },
+        ],
+    });
+    //? check if email sent successfully or not
+    if (!isEmailSent.accepted.length) {
+        return next(
+            new ErrorHandlerClass(
+                "Verification sending email is failed, please try again",
+                400,
+                "Error in user controller",
+                "at checking isEmailSent in signUp API",
+                { email: req.authUser.email }
+            )
+        );
+    }
     //? send response
     res.status(201).json({
+        status: "success",
         message: "Order created successfully",
-        order,
+        orderData: order,
     });
 };
 
@@ -213,23 +314,6 @@ const cancelOrder = async (req, res, next) => {
             )
         );
     }
-    /*
-                const orderDate = DateTime.fromJSDate(order.createdAt);
-                const currentDate = DateTime.now();
-                const diff = Math.ceil(
-                Number(currentDate.diff(orderDate, "days").toObject().days).toFixed(2)
-                );
-                if (diff < 3) {
-                    return next(
-                        new ErrorHandlerClass(
-                            "Order can't be cancelled",
-                            400,
-                            "Error in cancelOrder API checking order date",
-                            "at Order controller"
-                        )
-                    );
-                }
-                */
     //? update order status
     order.orderStatus = OrderStatus.CANCELLED;
     //? add canceled time
@@ -368,10 +452,102 @@ const getOrderDetails = async (req, res, next) => {
     });
 };
 
+/*
+@api {POST} /orders/payment/:orderId (payment with stripe)
+*/
+//! ====================================== Payment with Stripe ====================================== //
+const paymentWithStripe = async (req, res, next) => {
+    //? destruct data from req.authUser
+    const userId = req.authUser._id;
+    //? destruct data from req.params
+    const { orderId } = req.params;
+    //? check if order exist
+    const order = await Order.findOne({
+        _id: orderId,
+        userId,
+        orderStatus: OrderStatus.PENDING,
+    });
+    if (!order) {
+        return next(
+            new ErrorHandlerClass(
+                "Order not found",
+                404,
+                "Error in paymentWithStripe API",
+                "at Order controller",
+                { orderId }
+            )
+        );
+    }
+    //? get customer data
+    let customerData = {
+        customerName: req.authUser.userName,
+        Address: order.address,
+        Phone: order.contactNumber,
+    };
+    //? create payment object
+    const paymentObject = {
+        customer_email: req.authUser.email,
+        metadata: { shippingDetails: customerData },
+        client_reference_id: order?._id.toString(),
+        discounts: [],
+        line_items: order.products.map((product) => {
+            return {
+                price_data: {
+                    currency: "egp",
+                    unit_amount: product.price * 100,
+                    product_data: {
+                        name: req.authUser.userName,
+                    },
+                },
+                quantity: product.quantity,
+            };
+        }),
+    };
+    //? check if order has a coupon
+    if (order.couponId) {
+        const stripeCoupon = await createStripeCoupon({ couponId: order.couponId });
+        if (stripeCoupon.status) {
+            return next(
+                new ErrorHandlerClass(
+                    stripeCoupon.message,
+                    400,
+                    "Error in paymentWithStripe API",
+                    "at Order controller",
+                    { couponId: order.couponId }
+                )
+            );
+        }
+        //? add coupon to payment object
+        paymentObject.discounts = [
+            {
+                coupon: stripeCoupon.id,
+            },
+        ];
+    }
+    //? create checkout session
+    const checkoutSession = await createCheckoutSession(paymentObject);
+    //? create payment intent
+    const paymentIntent = await createPaymentIntent({
+        amount: order.total,
+        currency: "egp",
+    });
+    //? save paymentIntent id in DB
+    order.payment_intent = paymentIntent.id;
+    await order.save();
+    //? send response
+    res.status(200).json({
+        status: "success",
+        message: "Payment intent created successfully",
+        checkoutSessionData: checkoutSession,
+        paymentIntentData: paymentIntent,
+    });
+};
+
 export {
     createOrder,
     cancelOrder,
     deliveredOrder,
     listOrders,
     getOrderDetails,
+    paymentWithStripe,
 };

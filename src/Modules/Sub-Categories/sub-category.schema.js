@@ -9,7 +9,7 @@ const createSubCategorySchema = {
     body: Joi.object({
         name: generalRule.name,
     }),
-    query: Joi.object({
+    params: Joi.object({
         categoryId: generalRule.objectId,
     }),
 };

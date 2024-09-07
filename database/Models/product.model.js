@@ -21,6 +21,7 @@ const productSchema = new Schema(
             type: String,
             required: [true, "Product name is required"],
             trim: true,
+            lowercase: true,
         },
         slug: {
             type: String,
@@ -33,15 +34,18 @@ const productSchema = new Schema(
                 });
             },
         },
-        description: String,
+        description: {
+            type: String,
+            lowercase: true,
+            trim: true,
+            default: "No description provided",
+        },
         badge: {
             type: String,
             enum: Object.values(Badges),
         },
-        specs: {
-            type: Map,
-            of: String | Number,
-        },
+        //# Objects section
+        specs: Object,
         //# Numbers section
         price: {
             type: Number,
@@ -128,7 +132,7 @@ const productSchema = new Schema(
     },
     {
         timestamps: true,
-        versionKey: "version_key",
+        versionKey: false,
         toJSON: { virtuals: true },
         toObject: { virtuals: true },
         id: false,

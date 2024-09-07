@@ -32,8 +32,8 @@ const modelNameExist = (model) => {
 //! ===================================== Check Model by Ids ===================================== //
 const checkIdsExist = (model) => {
     return async (req, res, next) => {
-        //? destruct categoryId, subCategoryId and brandId from req.query
-        const { categoryId, subCategoryId, brandId } = req.query;
+        //? destruct categoryId, subCategoryId and brandId from req.params
+        const { categoryId, subCategoryId, brandId } = req.params;
         //? check Ids exists in database
         const brandDocument = await model
             .findOne({

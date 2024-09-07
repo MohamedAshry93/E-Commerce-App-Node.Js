@@ -16,7 +16,24 @@ import { extensions, SystemRoles } from "../../Utils/index.js";
 //# models
 import { Category } from "./../../../database/Models/index.js";
 
+//# models route
+import { subCategoryRouter } from "../Sub-Categories/sub-category.routes.js";
+import { brandRouter } from "../Brands/brand.routes.js";
+import { productRouter } from "../Products/product.routes.js";
+
 const categoryRouter = Router();
+
+//$ merged categoryId with sub-category API routers
+categoryRouter.use("/:categoryId/sub-categories", subCategoryRouter);
+
+//$ merged categoryId and subCategoryId with brand API routers
+categoryRouter.use("/:category/:subCategory/brands", brandRouter);
+
+//$ merged categoryId subCategoryId and brandId with product API routers
+categoryRouter.use(
+    "/:categoryId/:subCategoryId/:brandId/products",
+    productRouter
+);
 
 //! add category API router
 categoryRouter.post(

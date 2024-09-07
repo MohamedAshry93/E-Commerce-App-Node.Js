@@ -11,7 +11,7 @@ import * as couponSchema from "./coupon.schema.js";
 import * as middleware from "../../Middlewares/index.js";
 
 //# utils
-import { CouponRoles, SystemRoles } from "../../Utils/index.js";
+import { GeneralRoles, SystemRoles } from "../../Utils/index.js";
 
 const couponRouter = Router();
 
@@ -34,7 +34,7 @@ couponRouter.get(
     "/all",
     middleware.errorHandling(middleware.authenticationMiddleware()),
     middleware.errorHandling(
-        middleware.authorizationMiddleware(CouponRoles.COUPON_ROLES_USER_ADMIN)
+        middleware.authorizationMiddleware(GeneralRoles.GENERAL_ROLES_USER_ADMIN)
     ),
     middleware.errorHandling(
         middleware.validationMiddleware(couponSchema.getAllCouponsSchema)
@@ -47,7 +47,7 @@ couponRouter.get(
     "/details/:couponId",
     middleware.errorHandling(middleware.authenticationMiddleware()),
     middleware.errorHandling(
-        middleware.authorizationMiddleware(CouponRoles.COUPON_ROLES_USER_ADMIN)
+        middleware.authorizationMiddleware(GeneralRoles.GENERAL_ROLES_USER_ADMIN)
     ),
     middleware.errorHandling(
         middleware.validationMiddleware(couponSchema.getCouponDetailsByIdSchema)

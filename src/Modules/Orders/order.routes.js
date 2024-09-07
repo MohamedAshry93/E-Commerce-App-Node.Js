@@ -77,4 +77,17 @@ orderRouter.get(
     middleware.errorHandling(orderController.getOrderDetails)
 );
 
+//! payment with stripe API router
+orderRouter.post(
+    "/payment/:orderId",
+    middleware.errorHandling(middleware.authenticationMiddleware()),
+    middleware.errorHandling(
+        middleware.authorizationMiddleware(SystemRoles.USER)
+    ),
+    middleware.errorHandling(
+        middleware.validationMiddleware(orderSchema.paymentWithStripeSchema)
+    ),
+    middleware.errorHandling(orderController.paymentWithStripe)
+);
+
 export { orderRouter };

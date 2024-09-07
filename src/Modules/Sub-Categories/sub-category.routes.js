@@ -16,7 +16,7 @@ import { extensions, SystemRoles } from "../../Utils/index.js";
 //# models
 import { SubCategory } from "./../../../database/Models/index.js";
 
-const subCategoryRouter = Router();
+const subCategoryRouter = Router({ mergeParams: true });
 
 //! add sub-category API router
 subCategoryRouter.post(

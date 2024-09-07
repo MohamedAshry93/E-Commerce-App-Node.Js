@@ -21,14 +21,14 @@ import {
 
 //# APIS
 /*
-@api {POST} /sub-categories/create (create new sub-category)
+@api {POST} /categories/:categoryId/sub-categories/create (create new sub-category)
 */
 //! ========================================== Create Sub-Category ========================================== //
 const createSubCategory = async (req, res, next) => {
     //? destruct data from req.authUser
     const { _id } = req.authUser;
-    //? destruct categoryId from req.query
-    const { categoryId } = req.query;
+    //? destruct categoryId from req.params
+    const { categoryId } = req.params;
     const category = await Category.findById(categoryId);
     //? check if category exists in DB
     if (!category) {
@@ -131,7 +131,7 @@ const getSubCategory = async (req, res, next) => {
     if (slug) queryFilters.slug = slug;
     //? find the sub-category
     const subCategory = await SubCategory.findOne(queryFilters).select(
-        "-createdAt -updatedAt -version_key"
+        "-createdAt -updatedAt"
     );
     //? check if sub-category exists
     if (!subCategory) {
@@ -199,7 +199,6 @@ const updateSubCategory = async (req, res, next) => {
         subCategory.images.secure_url = secure_url;
         subCategory.images.public_id = public_id;
     }
-    subCategory.version_key += 1;
     //? update sub-category
     const updatedSubCategory = await subCategory.save();
     //? check if sub-category updated or not
@@ -249,10 +248,6 @@ const deleteSubCategory = async (req, res, next) => {
     await cloudinaryConfig().api.delete_resources_by_prefix(subCategoryPath);
     //? delete folder from cloudinary
     await cloudinaryConfig().api.delete_folder(subCategoryPath);
-    //? delete relevant brands from database
-    await Brand.deleteMany({ subCategoryId: deletedSubCategory._id });
-    //? delete relevant products from database
-    await Product.deleteMany({ subCategoryId: deletedSubCategory._id });
     //? update category (delete sub-category id from category)
     const updatedCategory = await Category.findByIdAndUpdate(
         deletedSubCategory.categoryId._id,
@@ -286,32 +281,7 @@ const deleteSubCategory = async (req, res, next) => {
 */
 //! =========================== Get all subCategories paginated with their brands =========================== //
 const getAllSubCategories = async (req, res, next) => {
-    /*
-            //? destruct data from req.query
-              const { page = 1, limit = 5 } = req.query;
-              const skip = (page - 1) * limit;
-          */
-
-    /*
-          /// => way No.1 using find, limit and skip method ///
-            //? find all subCategories paginated with their brands
-          const subCategories = await SubCategory.find()
-              .populate("brands")
-              .limit(limit)
-              .skip(skip);
-            //? count total number of pages
-              const count = await SubCategory.countDocuments();
-            //? return response
-              res.status(200).json({
-                  status: "success",
-                  message: "Sub-Categories found successfully",
-                  subCategoriesData: subCategories,
-                  totalPages: Math.ceil(count / limit),
-                  currentPage: page,
-              });
-          */
-
-    /// => way No.2 using using paginate method from mongoose-paginate-v2 as schema plugin ///
+    /// => using paginate method from mongoose-paginate-v2 as schema plugin ///
     //? find all subCategories paginated with their brands
     //? get query object
     const query = { ...req.query };
@@ -333,34 +303,6 @@ const getAllSubCategories = async (req, res, next) => {
         message: "Sub-Categories found successfully",
         subCategoriesData: subCategories,
     });
-
-    /*
-        /// => way No.3 using api features ///
-        //? destruct data from req.query
-        let { limit = 5, page = 1 } = req.query;
-        if (page < 1) page = 1;
-        if (limit < 1) limit = 5;
-        //? build a query
-        const mongooseQuery = SubCategory.find();
-        const ApiFeaturesInstance = new ApiFeatures(mongooseQuery, req.query)
-            .paginate()
-            .search()
-            .limitFields();
-        //? execute query
-        const subCategories = await ApiFeaturesInstance.mongooseQuery.populate(
-            "brands"
-        );
-        //? count total number of documents
-        const count = await SubCategory.countDocuments();
-        //? send response
-        res.status(200).json({
-            status: "success",
-            message: "SubCategories found successfully",
-            subCategoriesData: subCategories,
-            totalPages: Math.ceil(count / limit),
-            currentPage: page,
-        });
-        */
 };
 
 export {

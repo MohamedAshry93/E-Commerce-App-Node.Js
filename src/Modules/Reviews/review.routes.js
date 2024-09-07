@@ -13,11 +13,11 @@ import * as reviewSchema from "./review.schema.js";
 //# utils
 import { SystemRoles } from "../../Utils/index.js";
 
-const reviewRouter = Router();
+const reviewRouter = Router({ mergeParams: true });
 
 //! add review API router
 reviewRouter.post(
-    "/add/:productId",
+    "/add",
     middleware.errorHandling(middleware.authenticationMiddleware()),
     middleware.errorHandling(
         middleware.authorizationMiddleware(SystemRoles.USER)

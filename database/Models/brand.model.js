@@ -67,7 +67,7 @@ const brandSchema = new Schema(
             },
         ],
     },
-    { timestamps: true, versionKey: "version_key" }
+    { timestamps: true, versionKey: false }
 );
 
 export const Brand = mongoose.models.Brand || model("Brand", brandSchema);

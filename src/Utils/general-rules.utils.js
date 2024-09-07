@@ -13,6 +13,9 @@ const objectIdRule = (value, helper) => {
         : helper.message("Invalid objectId length must be 24 and hexadecimal");
 };
 
+//? custom validator
+const customValidator = Joi.alternatives().try(Joi.string(), Joi.number());
+
 //? general rules validation
 const generalRule = {
     objectId: Joi.string().custom(objectIdRule).required().messages({
@@ -45,13 +48,22 @@ const generalRule = {
         "x-verified-by": Joi.string().optional(),
         "x-verified-by": Joi.string().optional(),
     }),
-    userName: Joi.string().required().min(3).max(30).messages({
-        "string.base": "userName must be a string",
-        "string.empty": "Invalid userName it cannot be an empty string",
-        "any.required": "userName is required",
-        "string.min": "userName must be at least 3 characters long",
-        "string.max": "userName must be less than or equal 30 characters long",
-    }),
+    userName: Joi.string()
+        .required()
+        .min(3)
+        .max(30)
+        .pattern(
+            /^[\p{Arabic}\p{Latin}0-9\s!@#$%^&*()_+={}\[\]:;"'<>,.?~`-]{3,30}$/
+        )
+        .messages({
+            "string.base": "userName must be a string",
+            "string.empty": "Invalid userName it cannot be an empty string",
+            "any.required": "userName is required",
+            "string.min": "userName must be at least 3 characters long",
+            "string.max": "userName must be less than or equal 30 characters long",
+            "string.pattern.base":
+                "userName must be at least 3 characters long and max 30 characters long arabic or english and may contains any special characters and numbers",
+        }),
     email: Joi.string()
         .email({
             minDomainSegments: 2,
@@ -136,23 +148,24 @@ const generalRule = {
         "string.base": "slug must be a string",
         "string.empty": "Invalid slug it cannot be an empty string",
     }),
-    title: Joi.string().required().messages({
+    title: Joi.string().lowercase().required().messages({
         "string.base": "title must be a string",
         "string.empty": "Invalid title it cannot be an empty string",
         "any.required": "title is required",
+        "string.lowercase": "title must be lowercase",
     }),
-    description: Joi.string().optional().messages({
+    description: Joi.string().lowercase().optional().messages({
         "string.base": "description must be a string",
         "string.empty": "Invalid description it cannot be an empty string",
     }),
-    specs: Joi.object()
-        .pattern(Joi.string(), Joi.alternatives().try(Joi.string(), Joi.number()))
-        .optional()
-        .messages({
-            "string.base": "specs must be a object of strings",
-            "string.empty": "Invalid specs it cannot be an empty string",
-            "object.pattern.base": "specs must be a object of strings",
-        }),
+    specs: Joi.custom((value) => {
+        return customValidator.validate(value);
+    }).messages({
+        "object.pattern.base": "specs must be a object of strings",
+        "string.base": "specs must be a object of strings",
+        "string.empty": "Invalid specs it cannot be an empty string",
+        "any.custom": "Invalid specs it cannot be an empty string",
+    }),
     badge: Joi.string()
         .valid(...Object.values(Badges))
         .optional()
@@ -257,10 +270,11 @@ const generalRule = {
         "number.integer": "quantity must be an integer",
         "number.min": "quantity must be at least 1",
     }),
-    couponCode: Joi.string().required().messages({
+    couponCode: Joi.string().lowercase().required().messages({
         "string.base": "couponCode must be a string",
         "string.empty": "Invalid couponCode it cannot be an empty string",
         "any.required": "couponCode is required",
+        "string.lowercase": "couponCode must be lowercase",
     }),
     couponType: Joi.string()
         .valid(...Object.values(DiscountType))

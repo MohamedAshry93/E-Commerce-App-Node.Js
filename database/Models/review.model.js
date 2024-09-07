@@ -39,7 +39,7 @@ const reviewSchema = new Schema(
             default: ReviewStatus.PENDING,
         },
     },
-    { timestamps: true, versionKey: "version_key" }
+    { timestamps: true, versionKey: false }
 );
 
 export const Review = mongoose.models.Review || model("Review", reviewSchema);

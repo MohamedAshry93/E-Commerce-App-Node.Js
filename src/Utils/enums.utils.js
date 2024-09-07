@@ -14,8 +14,8 @@ const SystemRoles = {
     USER: "User",
 };
 
-const CouponRoles = {
-    COUPON_ROLES_USER_ADMIN: [SystemRoles.COMPANY_ADMIN, SystemRoles.USER],
+const GeneralRoles = {
+    GENERAL_ROLES_USER_ADMIN: [SystemRoles.COMPANY_ADMIN, SystemRoles.USER],
 };
 
 const Gender = {
@@ -49,14 +49,13 @@ const ReviewStatus = {
     REJECTED: "Rejected",
 };
 
-
 export {
     Badges,
     DiscountType,
     SystemRoles,
     Gender,
-    CouponRoles,
     PaymentMethod,
     OrderStatus,
     ReviewStatus,
+    GeneralRoles,
 };

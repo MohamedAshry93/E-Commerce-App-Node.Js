@@ -15,14 +15,14 @@ import { Brand, SubCategory } from "../../../database/Models/index.js";
 
 //# APIS
 /*
-@api {POST} /brands/create (create new brand)
+@api {POST} /categories/:category/:subCategory/brands/create (create new brand)
 */
 //! ========================================== Create Brand ========================================== //
 const createBrand = async (req, res, next) => {
     //? destruct data from req.authUser;
     const { _id } = req.authUser;
-    //? destruct categoryId and subCategoryId from req.query
-    const { category, subCategory } = req.query;
+    //? destruct categoryId and subCategoryId from req.params
+    const { category, subCategory } = req.params;
     //? check if category and sub-category exists in DB
     const isSubCategoryExist = await SubCategory.findById({
         _id: subCategory,
@@ -196,7 +196,6 @@ const updateBrand = async (req, res, next) => {
         brand.logo.secure_url = secure_url;
         brand.logo.public_id = public_id;
     }
-    brand.version_key += 1;
     //? update brand
     const updatedBrand = await brand.save();
     //? check if brand updated or not
