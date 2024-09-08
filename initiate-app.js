@@ -29,6 +29,11 @@ const main = () => {
     //# port
     let port = process.env.PORT || 3000;
 
+    //# destination
+    app.get("/", (req, res) => {
+        res.status(200).json({ Message: "Hello on my project 😘" });
+    });
+
     //# routers handler
     routerHandler(app);
 
@@ -37,11 +42,6 @@ const main = () => {
 
     //# cron jobs
     cronsJob();
-
-    //# destination
-    app.get("/", (req, res) => {
-        res.status(200).json({ Message: "Hello on my project 😘" });
-    });
 
     //# start server
     app.listen(port, () =>
