@@ -1,2 +1,7 @@
 node_modules
 .vscode
+.env
+.prod.env
+.dev.env
+important-comments.txt
+important-comments.md
